@@ -22,6 +22,7 @@ server.headersTimeout = 0;
 const io = new Server(server, {
   cors: {
     origin: ['https://crackershop.netlify.app'],
+    credentials: true,
     methods: ['GET', 'POST']
   },
   pingTimeout: 0,
