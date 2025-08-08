@@ -6,5 +6,5 @@ export const getImageUrl = (imagePath) => {
     return imagePath;
   }
   
-  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${imagePath.startsWith('/') ? imagePath : '/' + imagePath}`;
+  return `${import.meta.env.VITE_API_BASE_URL}${imagePath.startsWith('/') ? imagePath : '/' + imagePath}`;
 };
