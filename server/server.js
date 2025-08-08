@@ -21,7 +21,7 @@ server.headersTimeout = 0;
 
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173'],
+    origin: ['https://crackershop.netlify.app'],
     methods: ['GET', 'POST']
   },
   pingTimeout: 0,
@@ -234,7 +234,6 @@ io.on('connection', (socket) => {
 const startServer = () => {
   server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-    console.log(`Health check: http://localhost:${port}/api/health`);
 
     mongoose.connect(process.env.MONGODB)
       .then(async () => {
