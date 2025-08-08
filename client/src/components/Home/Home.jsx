@@ -64,46 +64,7 @@ const Home = () => {
     );
   };
 
-  // Helper function to make API calls with no timeout restrictions
-  const makeApiCall = async (url, options = {}) => {
-    try {
-      console.log(`Making API call to: ${url}`);
-      
-      const controller = new AbortController();
-      // No timeout - let requests complete naturally
-      
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive',
-          ...options.headers
-        },
-        ...options
-      });
 
-      console.log(`Response status for ${url}:`, response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error(`Expected JSON but got:`, text.substring(0, 200));
-        throw new Error(`Expected JSON response but got ${contentType}`);
-      }
-
-      const data = await response.json();
-      console.log(`API response for ${url}:`, data);
-      return data;
-
-    } catch (error) {
-      console.error(`API call failed for ${url}:`, error);
-      throw error;
-    }
-  };
 
   // Fetch categories from backend
   useEffect(() => {
@@ -112,7 +73,8 @@ const Home = () => {
         setCategoriesLoading(true);
         setError(null);
         
-        const data = await makeApiCall('/api/categories');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories`);
+        const data = await response.json();
         
         // Handle different response structures
         if (data.success !== false) {
@@ -140,7 +102,8 @@ const Home = () => {
         setLoading(true);
         setError(null);
         
-        const data = await makeApiCall('/api/products/featured');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/featured`);
+        const data = await response.json();
         
         // Handle different response structures
         if (data.success !== false) {
@@ -168,7 +131,8 @@ const Home = () => {
         setReviewsLoading(true);
         setError(null);
         
-        const data = await makeApiCall('/api/products/reviews/recent?limit=6');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/reviews/recent?limit=6`);
+        const data = await response.json();
         
         // Handle different response structures
         if (data.success !== false) {
