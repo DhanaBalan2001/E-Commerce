@@ -27,7 +27,7 @@ import {
 } from 'react-icons/fa';
 import { useToast } from '../../../../context/ToastContext';
 import api from '../../../../services/api';
-import './AdminOrderDetail.css';
+import './adminorderdetail.css';
 
 const AdminOrderDetail = () => {
   const { id } = useParams();
