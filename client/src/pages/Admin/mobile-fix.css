@@ -1,0 +1,32 @@
+@media (max-width: 768px) {
+  /* Remove any center alignment from mobile field labels */
+  .mobile-field-label {
+    text-align: inherit !important;
+  }
+  
+  /* Apply left/right alternating alignment to ALL admin mobile card fields */
+  .mobile-card-field:nth-child(odd) .mobile-field-label,
+  .mobile-card-field:nth-child(odd) .mobile-field-value {
+    text-align: left !important;
+  }
+  
+  .mobile-card-field:nth-child(even) .mobile-field-label,
+  .mobile-card-field:nth-child(even) .mobile-field-value {
+    text-align: right !important;
+  }
+  
+  /* Override any existing center alignment */
+  .mobile-category-card .mobile-field-label,
+  .mobile-user-card .mobile-field-label,
+  .mobile-order-card .mobile-field-label,
+  .mobile-admin-card .mobile-field-label,
+  .mobile-product-card .mobile-field-label {
+    text-align: inherit !important;
+  }
+  
+  /* Ensure full-width fields (like address) are left-aligned */
+  .mobile-card-field-full .mobile-field-label,
+  .mobile-card-field-full .mobile-field-value {
+    text-align: left !important;
+  }
+}

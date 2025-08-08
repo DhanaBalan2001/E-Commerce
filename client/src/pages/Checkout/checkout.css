@@ -1,0 +1,281 @@
+.checkout-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding-top: 80px !important;
+}
+
+.checkout-header {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.checkout-section {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.checkout-section .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.new-address-form {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.address-option {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.address-option:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.address-option .form-check-input:checked ~ .form-check-label .address-details {
+  color: #007bff;
+}
+
+.address-details {
+  margin-left: 1.5rem;
+}
+
+.address-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.address-text {
+  color: #666;
+  line-height: 1.4;
+}
+
+.payment-methods .form-check {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.payment-methods .form-check:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.payment-methods .form-check-input:checked ~ .form-check-label .payment-option {
+  color: #007bff;
+}
+
+.payment-option {
+  margin-left: 1.5rem;
+}
+
+.payment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.order-items {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.order-item {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1rem;
+}
+
+.order-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.item-image {
+  height: 60px;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+.checkout-item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-image-placeholder-small {
+  height: 100%;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 0.7rem;
+}
+
+.item-details {
+  padding-left: 0.5rem;
+}
+
+.item-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.item-price {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.item-quantity {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.order-summary-card {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  top: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.summary-row:last-child {
+  margin-bottom: 0;
+}
+
+.total-row {
+  font-size: 1.2rem;
+  padding-top: 0.5rem;
+}
+
+.order-info {
+  text-align: center;
+}
+
+.delivery-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.delivery-info li {
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Form styling */
+.form-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #e5e9ed;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .checkout-header {
+    padding: 1rem;
+  }
+  
+  .checkout-section {
+    margin-bottom: 1rem;
+  }
+  
+  .new-address-form {
+    padding: 1rem;
+  }
+  
+  .address-option,
+  .payment-methods .form-check {
+    padding: 0.75rem;
+  }
+  
+  .address-details,
+  .payment-option {
+    margin-left: 1rem;
+  }
+  
+  .order-summary-card {
+    position: static;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .order-item .row {
+    align-items: flex-start;
+  }
+  
+  .item-details {
+    padding-left: 0.5rem;
+  }
+  
+  .item-name {
+    font-size: 0.85rem;
+    line-height: 1.2;
+  }
+  
+  .item-price {
+    font-size: 0.8rem;
+  }
+  
+  .order-item {
+    padding: 0.75rem 0;
+  }
+  
+  .checkout-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .card-header h5 {
+    font-size: 1rem;
+  }
+}
+
+/* Loading states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Success states */
+.alert-success {
+  border-color: #28a745;
+  background-color: #d4edda;
+}
+
+/* Error states */
+.alert-danger {
+  border-color: #dc3545;
+  background-color: #f8d7da;
+}
+
+/* Sticky positioning for larger screens */
+@media (min-width: 992px) {
+  .sticky-top {
+    position: sticky;
+    top: 20px;
+    z-index: 1020;
+  }
+}

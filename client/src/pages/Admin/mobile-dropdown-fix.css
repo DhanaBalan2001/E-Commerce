@@ -1,0 +1,87 @@
+/* Universal Mobile Dropdown Fix for All Admin Forms */
+@media (max-width: 768px) {
+  /* Apply to all form selects and mobile dropdowns */
+  .form-select, 
+  .mobile-dropdown,
+  select.form-control,
+  select {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.4rem !important;
+    height: 30px !important;
+    box-sizing: border-box !important;
+    transform: scale(0.85) !important;
+    transform-origin: left center !important;
+    margin: 0 !important;
+  }
+  
+  /* Option styling for mobile */
+  .form-select option, 
+  .mobile-dropdown option,
+  select.form-control option,
+  select option {
+    font-size: 0.65rem !important;
+    padding: 0.2rem !important;
+  }
+  
+  /* Container fixes to prevent overflow */
+  .form-group, 
+  .mb-3,
+  .filters-content .col-md-2,
+  .filters-content .col-md-3,
+  .filters-content .col-md-4 {
+    transform: scale(0.9) !important;
+    transform-origin: left top !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Card body overflow prevention */
+  .card-body,
+  .filters-content {
+    overflow-x: hidden !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Form labels */
+  .form-label {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.2rem !important;
+    transform: scale(0.9) !important;
+    transform-origin: left center !important;
+  }
+  
+  /* Specific fixes for admin pages */
+  .category-group,
+  .subcategory-group {
+    transform: scale(0.85) !important;
+    transform-origin: left top !important;
+  }
+  
+  /* Prevent horizontal scroll on entire page */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Container and row fixes */
+  .container-fluid,
+  .container {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    max-width: 100vw !important;
+  }
+  
+  .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  .col, .col-md-6, .col-lg-8, .col-lg-4 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  
+
+}

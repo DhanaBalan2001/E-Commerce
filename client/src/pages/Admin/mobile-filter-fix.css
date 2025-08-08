@@ -1,0 +1,36 @@
+@media (max-width: 768px) {
+  /* Universal mobile dropdown fixes for all admin forms */
+  .form-select, .mobile-dropdown {
+    width: 100% !important;
+    max-width: calc(100vw - 60px) !important;
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.6rem !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Option styling for mobile */
+  .form-select option, .mobile-dropdown option {
+    font-size: 0.7rem !important;
+    padding: 0.2rem !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Container fixes */
+  .form-group, .mb-3 {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  /* Prevent horizontal scroll */
+  .card-body {
+    overflow-x: hidden !important;
+  }
+}

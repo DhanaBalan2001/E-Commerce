@@ -1,0 +1,22 @@
+.cracker-loader-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cracker-loader-text {
+  color: #090808;
+  margin: 0;
+}
+
+.cracker-loader-sm {
+  font-size: 0.8rem;
+}
+
+.cracker-loader-md {
+  font-size: 1rem;
+}
+
+.cracker-loader-lg {
+  font-size: 1.2rem;
+}

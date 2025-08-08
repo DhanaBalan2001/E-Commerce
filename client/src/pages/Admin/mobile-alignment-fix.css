@@ -1,0 +1,39 @@
+/* Mobile Field Label Alignment Fix - Apply to all admin pages */
+@media (max-width: 768px) {
+  /* Remove center alignment and apply left/right alternating pattern */
+  .mobile-field-label {
+    text-align: inherit !important;
+  }
+  
+  /* Left alignment for odd fields (1st, 3rd, 5th, etc.) */
+  .mobile-card-field:nth-child(odd) .mobile-field-label {
+    text-align: left !important;
+  }
+  
+  /* Right alignment for even fields (2nd, 4th, 6th, etc.) */
+  .mobile-card-field:nth-child(even) .mobile-field-label {
+    text-align: right !important;
+  }
+  
+  /* Apply to all admin mobile cards */
+  .mobile-user-card .mobile-field-label,
+  .mobile-order-card .mobile-field-label,
+  .mobile-admin-card .mobile-field-label,
+  .mobile-category-card .mobile-field-label,
+  .mobile-product-card .mobile-field-label {
+    text-align: inherit !important;
+  }
+  
+  /* Specific overrides for each admin page */
+  .mobile-user-card .mobile-card-field:nth-child(odd) .mobile-field-label,
+  .mobile-order-card .mobile-card-field:nth-child(odd) .mobile-field-label,
+  .mobile-admin-card .mobile-card-field:nth-child(odd) .mobile-field-label {
+    text-align: left !important;
+  }
+  
+  .mobile-user-card .mobile-card-field:nth-child(even) .mobile-field-label,
+  .mobile-order-card .mobile-card-field:nth-child(even) .mobile-field-label,
+  .mobile-admin-card .mobile-card-field:nth-child(even) .mobile-field-label {
+    text-align: right !important;
+  }
+}

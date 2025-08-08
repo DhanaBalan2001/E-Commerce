@@ -1,0 +1,88 @@
+.review-page {
+  min-height: 100vh;
+}
+
+.rating-selector-btn {
+  text-align: left !important;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+}
+
+.rating-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rating-option-btn {
+  text-align: left !important;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+}
+
+/* Mobile view adjustments */
+@media (max-width: 768px) {
+  .review-page {
+    padding-top: 100px !important;
+    margin-top: 20px;
+  }
+  
+  .review-page h2 {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .review-page .btn[type="submit"] {
+    display: block !important;
+    margin: 0 auto !important;
+    width: auto !important;
+  }
+  
+  .review-page textarea {
+    min-height: 120px !important;
+  }
+  
+  .rating-selector-btn {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    color: #495057;
+  }
+  
+  .rating-selector-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+  }
+  
+  .modal-content {
+    border-radius: 15px;
+  }
+  
+  .modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+  }
+  
+  .rating-option-btn {
+    transition: all 0.2s ease;
+  }
+  
+  .rating-option-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+}
+
+@media (max-width: 576px) {
+  .review-page {
+    padding-top: 120px !important;
+  }
+  
+  .review-page h2 {
+    font-size: 1.5rem;
+  }
+}
