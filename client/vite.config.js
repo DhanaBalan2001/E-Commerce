@@ -6,25 +6,20 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
   server: {
     port: 5173,
     headers: {
       'Cache-Control': 'no-cache'
-    },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            // Clear large headers
-            if (proxyReq.getHeader('cookie') && proxyReq.getHeader('cookie').length > 4096) {
-              proxyReq.removeHeader('cookie');
-            }
-          });
-        }
-      }
     }
   },
 
