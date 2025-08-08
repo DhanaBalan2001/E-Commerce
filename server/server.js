@@ -114,6 +114,21 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/contact', contactRoutes);
 
+// Root route to show server is running
+app.get('/', (req, res) => {
+  res.json({
+    message: '🎆 Crackers E-Commerce Server is Running!',
+    status: 'Active',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/api/health',
+      products: '/api/products',
+      auth: '/api/auth',
+      admin: '/api/admin'
+    }
+  });
+});
+
 // Health check (excluded from rate limit by middleware)
 app.get('/api/health', async (req, res) => {
   try {
