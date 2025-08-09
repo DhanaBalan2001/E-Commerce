@@ -760,7 +760,7 @@ const Home = () => {
                   <FaPhone className="contact-icon" />
                   <div>
                     <h5>Phone</h5>
-                    <p>+91 7558131473</p>
+                    <p>+91 7558131473 | +91 8124687053</p>
                   </div>
                 </div>
                 <div className="contact-item">
