@@ -789,13 +789,13 @@ const Home = () => {
                     Making celebrations memorable since 2010.
                   </p>
                   <div className={`social-links ${isMobile ? 'mobile-center' : ''}`}>
-                    <a href="#" className="social-link">
-                      <FaFacebook />
+                    <a href="https://wa.me/917558131473" target="_blank" rel="noopener noreferrer" className="social-link">
+                      <FaWhatsapp />
                     </a>
-                    <a href="#" className="social-link">
-                      <FaGoogle />
+                    <a href="mailto:sindhucrackers@gmail.com" className="social-link">
+                      <FaEnvelope />
                     </a>
-                    <a href="#" className="social-link">
+                    <a href="https://www.instagram.com/sindhucrackers?utm_source=qr&igsh=MXRsMXR1MmR5YmxzbA==" target="_blank" rel="noopener noreferrer" className="social-link">
                       <FaInstagram />
                     </a>
                   </div>
