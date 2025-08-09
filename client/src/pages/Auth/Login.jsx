@@ -144,7 +144,8 @@ const Login = () => {
           <Card className="shadow">
             <Card.Body className="p-4">
               <div className="text-center mb-4">
-                <h2 className="text-primary">🎆 Sindhu Crackers</h2>
+                <FaFireAlt className="logo-icon sparkle" />
+                <h2 className="text-primary">Sindhu Crackers</h2>
                 <p className="text-muted">
                   {step === 1 ? 'Enter your email to get started' : 'Enter the OTP sent to your email'}
                 </p>
