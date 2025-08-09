@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-b
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services';
 import { useAppContext } from '../../context/AppContext';
+import {  FaFireAlt } from 'react-icons/fa';
 import './Login.css'
 
 const Login = () => {
