@@ -753,14 +753,14 @@ const Home = () => {
                   <FaMapMarkerAlt className="contact-icon" />
                   <div>
                     <h5>Address</h5>
-                    <p>123 Cracker Street, Festival City, FC 12345</p>
+                    <p>3/1326/L, Sattur Road, Sivagami Colony, Near Balaji Print Pack, Sivakasi-626189 </p>
                   </div>
                 </div>
                 <div className="contact-item">
                   <FaPhone className="contact-icon" />
                   <div>
                     <h5>Phone</h5>
-                    <p>+91 98765 43210</p>
+                    <p>+91 7558131473</p>
                   </div>
                 </div>
                 <div className="contact-item">
