@@ -72,8 +72,9 @@ function startServer() {
         'http://localhost:5173',
         'http://localhost:3000',
         'https://sindhucrackers.com',
-        process.env.FRONTEND_URL || 'https://crackershop.netlify.app'
-      ],
+        'https://crackershop.netlify.app',
+        process.env.FRONTEND_URL
+      ].filter(Boolean),
       methods: ['GET', 'POST']
     },
     pingTimeout: 60000,
@@ -102,8 +103,9 @@ function startServer() {
       'http://localhost:5173',
       'http://localhost:3000', 
       'https://sindhucrackers.com',
-      process.env.FRONTEND_URL || 'https://crackershop.netlify.app'
-    ],
+      'https://crackershop.netlify.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'x-admin-request'],
