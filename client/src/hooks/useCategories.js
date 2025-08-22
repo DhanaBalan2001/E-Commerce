@@ -7,11 +7,12 @@ export const useCategories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (force = false) => {
     try {
       setLoading(true);
       setError(null);
-      const result = await categoryService.getCategories();
+      // Add cache busting for forced refresh
+      const result = await categoryService.getCategories(force ? `?t=${Date.now()}` : '');
       setData(result);
     } catch (err) {
       console.error('Categories fetch error:', err);
@@ -23,9 +24,15 @@ export const useCategories = () => {
 
   useEffect(() => {
     fetchCategories();
+    
+    // Listen for force refresh events
+    const handleForceRefresh = () => fetchCategories(true);
+    
+    window.addEventListener('forceRefresh', handleForceRefresh);
+    return () => window.removeEventListener('forceRefresh', handleForceRefresh);
   }, []);
 
-  return { data, loading, error, refetch: fetchCategories };
+  return { data, loading, error, refetch: () => fetchCategories(true) };
 };
 
 export const useCategory = (id) => {
@@ -55,13 +62,86 @@ export const useCategory = (id) => {
 
 // Admin category hooks (keep mutations as they are - no caching needed)
 export const useCreateCategory = (onSuccess) => {
-  return useMutation(categoryService.createCategory, { onSuccess });
+  const mutation = useMutation(
+    categoryService.createCategory, 
+    { 
+      onSuccess: (data) => {
+        // Force immediate refresh
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('categoryListNeedsRefresh', 'true');
+          window.dispatchEvent(new CustomEvent('categoryCreated', { detail: data }));
+          window.dispatchEvent(new CustomEvent('forceRefresh'));
+        }
+        if (onSuccess) onSuccess(data);
+      }
+    }
+  );
+  
+  return {
+    ...mutation,
+    mutateAsync: async (variables) => {
+      try {
+        const result = await mutation.mutateAsync(variables);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    }
+  };
 };
 
 export const useUpdateCategory = (onSuccess) => {
-  return useMutation(({ id, data }) => categoryService.updateCategory(id, data), { onSuccess });
+  const mutation = useMutation(
+    ({ id, data }) => categoryService.updateCategory(id, data), 
+    { 
+      onSuccess: (data) => {
+        // Force immediate refresh
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('categoryListNeedsRefresh', 'true');
+          // Dispatch multiple events to ensure refresh
+          window.dispatchEvent(new CustomEvent('categoryUpdated', { detail: data }));
+          window.dispatchEvent(new CustomEvent('forceRefresh'));
+        }
+        if (onSuccess) onSuccess(data);
+      }
+    }
+  );
+  
+  return {
+    ...mutation,
+    mutateAsync: async (variables) => {
+      try {
+        const result = await mutation.mutateAsync(variables);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    }
+  };
 };
 
 export const useDeleteCategory = (onSuccess) => {
-  return useMutation(categoryService.deleteCategory, { onSuccess });
+  const mutation = useMutation(categoryService.deleteCategory, { 
+    onSuccess: (data) => {
+      // Force immediate refresh
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('categoryListNeedsRefresh', 'true');
+        window.dispatchEvent(new CustomEvent('categoryDeleted', { detail: data }));
+        window.dispatchEvent(new CustomEvent('forceRefresh'));
+      }
+      if (onSuccess) onSuccess(data);
+    }
+  });
+  
+  return {
+    ...mutation,
+    mutateAsync: async (variables) => {
+      try {
+        const result = await mutation.mutateAsync(variables);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    }
+  };
 };

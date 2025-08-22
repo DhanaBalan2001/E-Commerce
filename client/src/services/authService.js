@@ -4,12 +4,9 @@ export const authService = {
   // Send OTP to email
   sendOTP: async (email) => {
     try {
-      console.log('📧 Sending OTP request for:', email);
       const response = await api.post('/auth/send-otp', { email });
-      console.log('✅ OTP sent successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Send OTP failed:', error);
       const errorData = error.response?.data || { message: 'Failed to send OTP' };
       throw errorData;
     }
@@ -18,21 +15,16 @@ export const authService = {
   // Verify OTP and login
   verifyOTP: async (email, otp, name = '') => {
     try {
-      console.log('🔐 Verifying OTP for:', email);
       const response = await api.post('/auth/verify-otp', { email, otp, name });
       
       // Store token and user data
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        console.log('✅ Login successful, token stored');
-      } else {
-        console.warn('⚠️ No token received in response');
       }
       
       return response.data;
     } catch (error) {
-      console.error('❌ Verify OTP failed:', error);
       const errorData = error.response?.data || { message: 'Failed to verify OTP' };
       throw errorData;
     }
@@ -86,7 +78,7 @@ export const authService = {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     const isAuth = !!(token && user);
-    console.log('🔒 Auth check:', { hasToken: !!token, hasUser: !!user, isAuthenticated: isAuth });
+
     return isAuth;
   },
 

@@ -26,7 +26,8 @@ import {
     getAllOrders,
     getAdminOrderById,
     updateOrderStatus,
-    exportOrders
+    exportOrders,
+    verifyManualPayment
 } from '../controllers/order.js';
     
 
@@ -54,6 +55,7 @@ router.get('/orders', authenticateAdmin, getAllOrders);
 router.get('/orders/export', authenticateAdmin, exportOrders);
 router.get('/orders/:id', authenticateAdmin, getAdminOrderById);
 router.put('/orders/:id/status', authenticateAdmin, updateOrderStatus);
+router.put('/orders/:orderId/verify-payment', authenticateAdmin, verifyManualPayment);
 
 // User management
 router.get('/users', authenticateAdmin, checkPermission('manage_users'), getUsers);

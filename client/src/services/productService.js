@@ -4,9 +4,7 @@ export const productService = {
   // Get all products with filters
   getProducts: async (params = {}) => {
     try {
-      console.log('Fetching products...');
-      const response = await api.get('/products');
-      console.log('Products received:', response.data);
+      const response = await api.get('/products', { params });
       
       // Ensure consistent response format
       if (response.data.success) {
@@ -20,7 +18,6 @@ export const productService = {
       
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch products:', error);
       throw { 
         message: error.response?.data?.message || 'Failed to load products',
         products: [],

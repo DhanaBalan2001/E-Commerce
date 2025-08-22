@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Row, Col, Button, Card, Carousel } from 'react-bootstrap';
+import { Container, Row, Col, Button, Card, Carousel, Modal } from 'react-bootstrap';
 import CrackerLoader from '../common/CrackerLoader';
 import { getImageUrl } from '../../utils/imageUrl';
 import { 
@@ -16,7 +16,9 @@ import {
   FaGoogle,
   FaInstagram,
   FaWhatsapp,
-  FaFireAlt
+  FaFireAlt,
+  FaCopy,
+  FaCheck
 } from 'react-icons/fa';
 import './home.css';
 
@@ -29,7 +31,7 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 991);
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -38,11 +40,18 @@ const Home = () => {
   });
   const [contactLoading, setContactLoading] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
+  const [showUpiModal, setShowUpiModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+
+  const upiId = "sindhucrackers@axl";
+
+
 
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.innerWidth <= 991);
     };
 
     window.addEventListener('resize', handleResize);
@@ -64,127 +73,125 @@ const Home = () => {
     );
   };
 
-  // Helper function to make API calls with no timeout restrictions
-  const makeApiCall = async (url, options = {}) => {
+
+
+  // Fetch categories from backend
+  const fetchCategories = async () => {
     try {
-      console.log(`Making API call to: ${url}`);
+      setCategoriesLoading(true);
+      setError(null);
       
-      const controller = new AbortController();
-      // No timeout - let requests complete naturally
-      
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive',
-          ...options.headers
-        },
-        ...options
-      });
-
-      console.log(`Response status for ${url}:`, response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error(`Expected JSON but got:`, text.substring(0, 200));
-        throw new Error(`Expected JSON response but got ${contentType}`);
-      }
-
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories?t=${Date.now()}`);
       const data = await response.json();
-      console.log(`API response for ${url}:`, data);
-      return data;
-
-    } catch (error) {
-      console.error(`API call failed for ${url}:`, error);
-      throw error;
+      
+      // Handle different response structures
+      if (data.success !== false) {
+        setCategories(data.categories || data || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch categories');
+      }
+      
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      setError(err.message);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
-  // Fetch categories from backend
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setCategoriesLoading(true);
-        setError(null);
-        
-        const data = await makeApiCall('/api/categories');
-        
-        // Handle different response structures
-        if (data.success !== false) {
-          setCategories(data.categories || data || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch categories');
-        }
-        
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-        setError(err.message);
-        setCategories([]);
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
-
     fetchCategories();
+    
+    // Listen for category updates
+    const handleCategoryUpdate = () => {
+      fetchCategories();
+    };
+    
+    window.addEventListener('categoryUpdated', handleCategoryUpdate);
+    window.addEventListener('categoryCreated', handleCategoryUpdate);
+    
+    return () => {
+      window.removeEventListener('categoryUpdated', handleCategoryUpdate);
+      window.removeEventListener('categoryCreated', handleCategoryUpdate);
+    };
   }, []);
 
   // Fetch bestseller products from backend
-  useEffect(() => {
-    const fetchBestSellers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const data = await makeApiCall('/api/products/featured');
-        
-        // Handle different response structures
-        if (data.success !== false) {
-          setBestSellers(data.products || data || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch featured products');
-        }
-        
-      } catch (err) {
-        console.error('Error fetching bestsellers:', err);
-        setError(err.message);
-        setBestSellers([]);
-      } finally {
-        setLoading(false);
+  const fetchBestSellers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/featured?t=${Date.now()}`);
+      const data = await response.json();
+      
+      // Handle different response structures
+      if (data.success !== false) {
+        setBestSellers(data.products || data || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch featured products');
       }
-    };
+      
+    } catch (err) {
+      console.error('Error fetching bestsellers:', err);
+      setError(err.message);
+      setBestSellers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBestSellers();
+    
+    // Listen for product updates
+    const handleProductUpdate = () => {
+      fetchBestSellers();
+    };
+    
+    window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('productCreated', handleProductUpdate);
+    window.addEventListener('featuredProductsUpdate', handleProductUpdate);
+    
+    return () => {
+      window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('productCreated', handleProductUpdate);
+      window.removeEventListener('featuredProductsUpdate', handleProductUpdate);
+    };
+  }, []);
+  
+  // Auto-refresh featured products every 2 minutes
+  useEffect(() => {
+    const interval = setInterval(fetchBestSellers, 120000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch recent reviews from backend
-  useEffect(() => {
-    const fetchRecentReviews = async () => {
-      try {
-        setReviewsLoading(true);
-        setError(null);
-        
-        const data = await makeApiCall('/api/products/reviews/recent?limit=6');
-        
-        // Handle different response structures
-        if (data.success !== false) {
-          setReviews(data.reviews || data || []);
-        } else {
-          throw new Error(data.message || 'Failed to fetch reviews');
-        }
-        
-      } catch (err) {
-        console.error('Error fetching reviews:', err);
-        setReviews([]);
-      } finally {
-        setReviewsLoading(false);
+  const fetchRecentReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/reviews/recent?limit=6&t=${Date.now()}`);
+      const data = await response.json();
+      
+      // Handle different response structures
+      if (data.success !== false) {
+        setReviews(data.reviews || data || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch reviews');
       }
-    };
+      
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRecentReviews();
   }, []);
 
@@ -276,6 +283,16 @@ const Home = () => {
     }
   };
 
+  const handleCopyUpi = async () => {
+    try {
+      await navigator.clipboard.writeText(upiId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   // Debug component to show current state
   const DebugInfo = () => {
     if (process.env.NODE_ENV !== 'development') return null;
@@ -288,11 +305,13 @@ const Home = () => {
     <div className="home-page">
       <DebugInfo />
       
+
+      
       {/* Floating Bubbles Animation */}
       <ElegantAnimations />
       
       {/* Hero Section */}
-      <section className="hero-section">
+      <section className="hero-section" style={{position: 'relative'}}>
         <Container>
           <Row className="align-items-center min-vh-100">
             <Col lg={6} md={6} sm={12}>
@@ -331,10 +350,70 @@ const Home = () => {
             </Col>
           </Row>
         </Container>
+        {/* Desktop Banner - Absolute Position */}
+        {!isMobile && (
+          <div style={{
+            background: 'linear-gradient(45deg, #ff6b35, #ffa726)',
+            padding: '15px 0',
+            color: 'white',
+            fontSize: '1rem',
+            fontWeight: '700',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            position: 'absolute',
+            bottom: '0',
+            left: '0',
+            right: '0'
+          }}>
+            <div style={{
+              display: 'inline-block',
+              animation: 'scroll 20s linear infinite'
+            }}>
+              🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified
+            </div>
+          </div>
+        )}
+
       </section>
+
+
+
+      <style>{`
+        @keyframes scroll {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+      `}</style>
 
       {/* About Us Section */}
       <section id="about" className="about-section py-5">
+        {/* Mobile Banner - Before About Heading */}
+        {isMobile && (
+          <div style={{
+            background: 'linear-gradient(45deg, #ff6b35, #ffa726)',
+            padding: '12px 0',
+            color: 'white',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            width: '100%',
+            marginBottom: '2rem'
+          }}>
+            <div style={{
+              display: 'inline-block',
+              animation: 'scroll 20s linear infinite'
+            }}>
+              🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎉 Limited Time Offer • ⚡ Fast Delivery • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified
+            </div>
+          </div>
+        )}
         <Container>
           <Row>
             <Col lg={12} className="text-center">
@@ -484,8 +563,12 @@ const Home = () => {
                             alt={category.name}
                             className="category-image"
                             onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'block';
+                              if (e.target) {
+                                e.target.style.display = 'none';
+                                if (e.target.nextSibling) {
+                                  e.target.nextSibling.style.display = 'block';
+                                }
+                              }
                             }}
                           />
                         ) : (
@@ -789,14 +872,14 @@ const Home = () => {
                   <FaMapMarkerAlt className="contact-icon" />
                   <div>
                     <h5>Address</h5>
-                    <p>123 Cracker Street, Festival City, FC 12345</p>
+                    <p>3/1326/L, Sattur Road, Sivagami Colony, Near Balaji Print Pack, Sivakasi-626189 </p>
                   </div>
                 </div>
                 <div className="contact-item">
                   <FaPhone className="contact-icon" />
                   <div>
                     <h5>Phone</h5>
-                    <p>+91 98765 43210</p>
+                    <p>+91 7558131473 | +91 8124687053</p>
                   </div>
                 </div>
                 <div className="contact-item">
@@ -825,13 +908,13 @@ const Home = () => {
                     Making celebrations memorable since 2010.
                   </p>
                   <div className={`social-links ${isMobile ? 'mobile-center' : ''}`}>
-                    <a href="#" className="social-link">
-                      <FaFacebook />
+                    <a href="https://wa.me/917558131473" target="_blank" rel="noopener noreferrer" className="social-link">
+                      <FaWhatsapp />
                     </a>
-                    <a href="#" className="social-link">
-                      <FaGoogle />
+                    <a href="mailto:sindhucrackers@gmail.com" className="social-link">
+                      <FaEnvelope />
                     </a>
-                    <a href="#" className="social-link">
+                    <a href="https://www.instagram.com/sindhucrackers?utm_source=qr&igsh=MXRsMXR1MmR5YmxzbA==" target="_blank" rel="noopener noreferrer" className="social-link">
                       <FaInstagram />
                     </a>
                   </div>
@@ -851,11 +934,9 @@ const Home = () => {
                   </ul>
                 </div>
               </Col>
-              
-              
-
-              <Col lg={3} md={6} sm={12} className="mb-4 quick-links-footer-col"
-                   style={isMobile ? {flex: '0 0 50%', maxWidth: '50%'} : {}}>
+          
+           <Col lg={3} md={6} sm={12} className="mb-4 quick-links-footer-col"
+                   style={isMobile ? {flex: '0 0 50%', maxWidth: '50%'} : {paddingRight: '0.5rem'}}>
                 <div className="footer-widget">
                   <h6 className="footer-widget-title">Quick Links</h6>
                   <ul className="footer-links">
@@ -867,7 +948,54 @@ const Home = () => {
                   </ul>
                 </div>
               </Col>
+
+           <Col lg={3} md={6} sm={12} className="mb-4 customer-service-footer-col" 
+              style={isMobile ? {flex: '0 0 50%', maxWidth: '50%'} : {}}>
+                <div className="footer-widgets">
+                  <h6 className="footer-widget-titles" >Bank Details</h6>
+                  <ul className="footer-links">
+                    <li><a>Union Bank of India</a></li>
+                    <li><a>Behind Bus Stand,</a></li>
+                    <li><a>Sivakasi - 626123</a></li> 
+                    <li><a>A/C : 04562279566</a></li>
+                    <li><a>IFSC : UBIN0911381</a></li>
+                  </ul>
+                </div>
+              </Col>
+
+              <Col lg={3} md={6} sm={12} className="mb-4 customer-service-footer-col" 
+              style={isMobile ? {flex: '0 0 50%', maxWidth: '80%'} : {}}>
+                <div className="footer-widget">
+                  <h6 className="footer-widget-title" >Payment Info</h6>
+                  <div className="payment-section">
+                    <div className="payment-row">
+                      <div className="qr-code-section">
+                        <img 
+                          src="/images/QR Code.jpg" 
+                          alt="Payment QR Code" 
+                          className="qr-code-image"
+                          style={{width: '120px', height: '120px', objectFit: 'contain', cursor: 'pointer'}}
+                          onClick={() => setShowUpiModal(true)}
+                        />
+                      </div>
+                    </div>
+                       
+                  </div>
+               
+                </div>
+              </Col>
+           </Row>
+          </Container>
+        </div>
         
+        <div className="footer-middle py-3 ">
+          <Container>
+            <Row>
+              <Col lg={12} className="text-center">
+                <p className="mb-0">
+                  <strong>Google Pay/Paytm/PhonePe : 7094525228</strong>
+                </p>
+              </Col>
             </Row>
           </Container>
         </div>
@@ -884,10 +1012,45 @@ const Home = () => {
          </Container>
         </div>
       </footer>
+
+      {/* UPI Modal */}
+      <Modal show={showUpiModal} onHide={() => setShowUpiModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>UPI Payment Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <div className="mb-3">
+            <img 
+              src="/images/QR Code.jpg" 
+              alt="Payment QR Code" 
+              style={{width: '200px', height: '200px', objectFit: 'contain'}}
+            />
+            <p className="mt-2 mb-0">
+              <strong>Google Pay/Paytm/PhonePe : 70</strong>
+            </p>
+          </div>
+          <div className="upi-details">
+            <h5>UPI ID</h5>
+            <div className="d-flex align-items-center justify-content-center gap-2 mb-3">
+              <code className="bg-light p-2 rounded">{upiId}</code>
+              <Button 
+                variant="outline-primary" 
+                size="sm" 
+                onClick={handleCopyUpi}
+                className="d-flex align-items-center gap-1"
+              >
+                {copied ? <FaCheck className="text-success" /> : <FaCopy />}
+                {copied ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <small className="text-muted">
+              Scan the QR code or use the UPI ID for payment
+            </small>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default Home;
-
-

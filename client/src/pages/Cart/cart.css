@@ -961,5 +961,26 @@
   }
 }
 
+/* Bundle Styles */
+.cart-bundle-card {
+  border: 2px solid #ff6b35;
+  border-radius: 12px;
+  background: #fff9f5;
+}
+
+.cart-bundle-card .card-header {
+  background: linear-gradient(45deg, #ff6b35, #ffa726) !important;
+  color: white;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.bundle-item-mobile {
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
 /* End of Cart CSS */
 

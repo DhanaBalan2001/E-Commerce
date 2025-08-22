@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Get API URL from environment variables with fallback
-const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api`;
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -31,11 +31,7 @@ api.interceptors.request.use(
       }
     }
     
-    // Log request for debugging
-    console.log(`🔄 ${config.method?.toUpperCase()} ${config.url}`, {
-      hasToken: !!(token || adminToken),
-      isAdminRoute: config.url?.includes('/admin/')
-    });
+
     
     return config;
   },
@@ -48,18 +44,12 @@ api.interceptors.request.use(
 // Response interceptor to handle common errors
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-      status: response.status,
-      data: response.data
-    });
-    
     // Handle token refresh
     const newToken = response.headers['x-new-token'];
     if (newToken) {
       const isAdminRoute = response.config.url?.includes('/admin/');
       const storageKey = isAdminRoute ? 'adminToken' : 'token';
       localStorage.setItem(storageKey, newToken);
-      console.log('🔄 Token refreshed automatically');
     }
     
     return response;
@@ -67,15 +57,8 @@ api.interceptors.response.use(
   async (error) => {
     const { config, response } = error;
     
-    console.error(`❌ ${config?.method?.toUpperCase()} ${config?.url}`, {
-      status: response?.status,
-      message: response?.data?.message || error.message,
-      data: response?.data
-    });
-    
     // Handle rate limit without automatic logout
     if (response?.status === 429) {
-      console.warn('Rate limit exceeded - please wait before retrying');
       return Promise.reject({
         ...error,
         message: response?.data?.message || 'Too many requests. Please wait before retrying.',
@@ -90,7 +73,7 @@ api.interceptors.response.use(
     
     if (!response && config && config.__retryCount < 2 && !error.code?.includes('TIMEOUT')) {
       config.__retryCount += 1;
-      console.log(`🔄 Retrying request (${config.__retryCount}/2)...`);
+
       return new Promise(resolve => {
         setTimeout(() => resolve(api(config)), 1000 * config.__retryCount);
       });
@@ -115,16 +98,16 @@ api.interceptors.response.use(
       }
     } else if (response?.status === 403) {
       // Forbidden - user doesn't have permission
-      console.error('Access forbidden:', response.data?.message);
+
     } else if (response?.status === 404) {
       // Not found
-      console.error('Resource not found:', config?.url);
+
     } else if (response?.status >= 500) {
       // Server error
-      console.error('Server error:', response.data?.message || 'Internal server error');
+
     } else if (!response) {
       // Network error
-      console.error('Network error:', error.message);
+
     }
     
     // Return a more user-friendly error

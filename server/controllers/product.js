@@ -69,11 +69,13 @@ export const getAllProducts = async (req, res) => {
         const [products, total] = await Promise.all([
             Product.find(query)
                 .populate('category', 'name slug')
+                .select('name description price originalPrice discount stock images ratings createdAt')
                 .sort(sortOptions)
                 .skip(skip)
                 .limit(parseInt(limit))
-                .lean(),
-            Product.countDocuments(query)
+                .lean()
+                .maxTimeMS(5000),
+            Product.countDocuments(query).maxTimeMS(3000)
         ]);
         
         const totalPages = Math.ceil(total / parseInt(limit));

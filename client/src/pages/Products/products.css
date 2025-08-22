@@ -867,6 +867,19 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     margin-bottom: 1rem;
   }
+  
+  /* Per page button alignment in mobile */
+  .results-header .col[class*="xs-auto"] {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  
+  .results-header .btn {
+    white-space: nowrap;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
 }
   
   .filter-section .form-select {

@@ -60,6 +60,12 @@ export const useCart = () => {
       setAddToCartError(null);
       const result = await cartService.addToCart(productData.productId, productData.quantity);
       await fetchCart();
+      
+      // Update cart count in AppContext immediately
+      if (appContext?.updateCartCount) {
+        appContext.updateCartCount(result.cartItemCount || 0);
+      }
+      
       return result;
     } catch (err) {
       const errorMessage = err.message || 'Failed to add to cart';
@@ -68,7 +74,7 @@ export const useCart = () => {
     } finally {
       setAddToCartLoading(false);
     }
-  }, [user, fetchCart]);
+  }, [user, fetchCart, appContext]);
 
   const updateCartItem = useCallback(async (itemData) => {
     if (!user) {

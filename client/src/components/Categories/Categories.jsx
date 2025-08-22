@@ -111,7 +111,12 @@ const Categories = () => {
                               src={category.image ? `${import.meta.env.VITE_API_BASE_URL}${category.image}` : '/placeholder-image.jpg'}
                               alt={category.name}
                               className="category-image"
-                              style={!isMobile ? {width: '120px', height: '120px', objectFit: 'cover'} : {}}
+                              style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                                maxHeight: isMobile ? '80px' : '120px',
+                                objectFit: 'contain'
+                              }}
                             />
                           </div>
                           

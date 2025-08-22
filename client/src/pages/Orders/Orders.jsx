@@ -18,7 +18,7 @@ import {
   FaEnvelope,
 } from 'react-icons/fa';
 import { useAppContext } from '../../context/AppContext';
-import { orderService } from '../../services';
+import { orderService, cartService } from '../../services';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import './orders.css';
 
@@ -68,96 +68,8 @@ const Orders = () => {
       setLoading(true);
       setError('');
       
-      // TEMPORARY SAMPLE DATA - REMOVE AFTER TESTING
-      const sampleOrders = [
-        {
-          _id: '1',
-          orderNumber: 'ORD001',
-          status: 'delivered',
-          createdAt: new Date('2024-01-15').toISOString(),
-          items: [
-            {
-              product: { name: 'Sparklers Pack', images: [{ url: '/images/sparklers.jpg' }] },
-              quantity: 2,
-              price: 150
-            },
-            {
-              product: { name: 'Rocket Set', images: [{ url: '/images/rockets.jpg' }] },
-              quantity: 1,
-              price: 300
-            }
-          ],
-          shippingAddress: {
-            name: 'John Doe',
-            street: '123 Main Street',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            zipCode: '400001',
-            phone: '+91 9876543210'
-          },
-          shippingCost: 50,
-          taxAmount: 90,
-          paymentMethod: 'Online Payment',
-          paymentStatus: 'paid'
-        },
-        {
-          _id: '2',
-          orderNumber: 'ORD002',
-          status: 'processing',
-          createdAt: new Date('2024-01-20').toISOString(),
-          items: [
-            {
-              product: { name: 'Flower Pots', images: [{ url: '/images/flowerpots.jpg' }] },
-              quantity: 3,
-              price: 200
-            }
-          ],
-          shippingAddress: {
-            name: 'Jane Smith',
-            street: '456 Park Avenue',
-            city: 'Delhi',
-            state: 'Delhi',
-            zipCode: '110001',
-            phone: '+91 9876543211'
-          },
-          shippingCost: 0,
-          taxAmount: 108,
-          paymentMethod: 'Cash on Delivery',
-          paymentStatus: 'pending'
-        },
-        {
-          _id: '3',
-          orderNumber: 'ORD003',
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-          items: [
-            {
-              product: { name: 'Aerial Shots', images: [{ url: '/images/aerial.jpg' }] },
-              quantity: 1,
-              price: 500
-            }
-          ],
-          shippingAddress: {
-            name: 'Mike Johnson',
-            street: '789 Oak Street',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            zipCode: '560001',
-            phone: '+91 9876543212'
-          },
-          shippingCost: 75,
-          taxAmount: 90,
-          paymentMethod: 'Online Payment',
-          paymentStatus: 'pending'
-        }
-      ];
-      
-      // Use sample data instead of API call
-      setOrders(sampleOrders);
-      
-      // Uncomment below for real API call
-      // const response = await orderService.getUserOrders();
-      // setOrders(response.orders || []);
+      const response = await orderService.getUserOrders();
+      setOrders(response.orders || []);
     } catch (error) {
       console.error('Error loading orders:', error);
       setError(error.message || 'Failed to load orders');
@@ -175,7 +87,7 @@ const Orders = () => {
   const handleCancelOrderConfirm = async () => {
     try {
       setActionLoading(true);
-      // MOCK: Update order status to cancelled
+      await orderService.cancelOrder(orderToCancel);
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order._id === orderToCancel ? { ...order, status: 'cancelled' } : order
@@ -197,11 +109,20 @@ const Orders = () => {
   const handleReorder = async (orderId) => {
     try {
       setActionLoading(true);
-      // MOCK: Simulate adding items to cart
       const order = orders.find(o => o._id === orderId);
-      if (order) {
-        console.log('Reordering items:', order.items);
-        // In real implementation, add items to cart via API
+      if (order && order.items) {
+        for (const item of order.items) {
+          if (item.type === 'bundle' && item.bundleId) {
+            // Handle bundle reorder
+            await cartService.addBundleToCart(item.bundleId, item.quantity);
+          } else if (item.type === 'giftbox' && item.giftBoxId) {
+            // Handle gift box reorder
+            await cartService.addGiftBoxToCart(item.giftBoxId, item.quantity);
+          } else if (item.product) {
+            // Handle regular product reorder
+            await cartService.addToCart(item.product._id || item.product, item.quantity);
+          }
+        }
         navigate('/cart');
       }
     } catch (error) {
@@ -364,220 +285,94 @@ const Orders = () => {
           </Col>
         </Row>
 
-        {/* Orders Summary */}
-        <Row className="mb-4">
-          <Col xs={6} sm={6} md={6} lg={3} className="mb-3">
-            <div className="summary-card">
-              <div className="summary-icon total">
-                <FaShoppingBag />
-              </div>
-              <div className="summary-content">
-                <h3>{orders.length}</h3>
-                <p>Total Orders</p>
-              </div>
-            </div>
-          </Col>
-          <Col xs={6} sm={6} md={6} lg={3} className="mb-3">
-            <div className="summary-card">
-              <div className="summary-icon delivered">
-                <FaCheckCircle />
-              </div>
-              <div className="summary-content">
-                <h3>{orders.filter(o => o.status === 'delivered').length}</h3>
-                <p>Delivered</p>
-              </div>
-            </div>
-          </Col>
-          <Col xs={6} sm={6} md={6} lg={3} className="mb-3">
-            <div className="summary-card">
-              <div className="summary-icon processing">
-                <FaTruck />
-              </div>
-              <div className="summary-content">
-                <h3>{orders.filter(o => ['processing', 'shipped'].includes(o.status)).length}</h3>
-                <p>In Transit</p>
-              </div>
-            </div>
-          </Col>
-          <Col xs={6} sm={6} md={6} lg={3} className="mb-3">
-            <div className="summary-card">
-              <div className="summary-icon cancelled">
-                <FaTimesCircle />
-              </div>
-              <div className="summary-content">
-                <h3>{orders.filter(o => o.status === 'cancelled').length}</h3>
-                <p>Cancelled</p>
-              </div>
-            </div>
-          </Col>
-        </Row>
 
-        {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+
+        {orders.length === 0 ? (
           <div className="empty-orders fade-in">
             <div className="empty-orders-icon">
               <FaShoppingBag />
             </div>
-            <h3>
-              {orders.length === 0 ? 'No orders yet' : 'No orders found'}
-            </h3>
-            <p>
-              {orders.length === 0 
-                ? "You haven't placed any orders yet. Start shopping to see your orders here."
-                : "No orders match your current search criteria."
-              }
-            </p>
-            {orders.length === 0 && (
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => navigate('/products')}
-                className="mt-3"
-              >
-                Start Shopping
-              </Button>
-            )}
+            <h3>No orders yet</h3>
+            <p>You haven't placed any orders yet. Start shopping to see your orders here.</p>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => navigate('/products')}
+              className="mt-3"
+            >
+              Start Shopping
+            </Button>
           </div>
         ) : (
-          <div className="orders-list">
-            {filteredOrders.map((order, index) => {
-              const statusInfo = getStatusBadge(order.status);
-              const StatusIcon = statusInfo.icon;
-              
-              return (
-                <Card key={order._id} className={`order-card fade-in ${index === 0 ? 'first-order' : ''}`}>
+          <Row>
+            {orders.map((order) => (
+              <Col lg={4} md={6} key={order._id} className="mb-3">
+                <Card className="order-card shadow-sm h-100">
+                  <Card.Header className="d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0">#{order.orderNumber}</h6>
+                    <div>
+                      <Badge bg={order.status === 'confirmed' ? 'success' : 'warning'} className="me-1">
+                        {order.status}
+                      </Badge>
+                      <Badge bg={order.paymentInfo?.status === 'completed' ? 'success' : 'danger'}>
+                        {order.paymentInfo?.status === 'completed' ? 'paid' : 'not paid'}
+                      </Badge>
+                    </div>
+                  </Card.Header>
+                  
                   <Card.Body>
-                    <Row className="align-items-center">
-                      {/* Order Info */}
-                      <Col lg={3} md={6} sm={12} className="mb-3 mb-lg-0">
-                        <div className="order-info">
-                          <h5 className="order-number">
-                            #{order.orderNumber || order._id.slice(-8)}
-                          </h5>
-                          <p className="order-date">
-                            <FaCalendarAlt className="me-2" />
-                            {formatDate(order.createdAt)}
-                          </p>
-                          <div className="order-items-count">
-                            {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
-                          </div>
-                        </div>
-                      </Col>
-
-                      {/* Order Status */}
-                      <Col lg={2} md={6} sm={12} className="mb-3 mb-lg-0">
-                        <div className="order-status">
-                          <Badge bg={statusInfo.variant} className="status-badge">
-                            <StatusIcon className="me-2" />
-                            {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
-                          </Badge>
-                        </div>
-                      </Col>
-
-                      {/* Order Total */}
-                      <Col lg={2} md={6} sm={12} className="mb-3 mb-lg-0">
-                        <div className="order-total">
-                          <h5>{formatCurrency(calculateOrderTotal(order))}</h5>
-                          <p className="text-muted">Total Amount</p>
-                        </div>
-                      </Col>
-
-                                          {/* Delivery Address */}
-                      <Col lg={3} md={6} sm={12} className="mb-3 mb-lg-0">
-                        <div className="delivery-address">
-                          <FaMapMarkerAlt className="me-2 text-muted" />
-                          <div>
-                            <p className="address-line">
-                              {order.shippingAddress?.street || 'N/A'}
-                            </p>
-                            <p className="address-city">
-                              {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
-                            </p>
-                          </div>
-                        </div>
-                      </Col>
-
-                      {/* Order Actions */}
-                      <Col lg={2} md={12} sm={12}>
-                        <div className="order-actions">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() => showOrderDetails(order)}
-                            className="action-btn mb-2"
-                          >
-                            <FaEye className="me-1" />
-                            View Details
-                          </Button>
-                          
-                          {order.status === 'pending' && (
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleCancelOrderClick(order._id)}
-                              disabled={actionLoading}
-                              className="action-btn mb-2"
-                            >
-                              <FaBan className="me-1" />
-                              Cancel
-                            </Button>
+                    <div className="mb-3">
+                        <div className="mb-3">
+                      <small className="text-muted">
+                        <FaCalendarAlt className="me-1" />
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </small>
+                    </div>
+                      <table className="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {order.items?.slice(0, 2).map((item, idx) => (
+                            <tr key={idx}>
+                              <td className="fw-bold">{item.name}</td>
+                              <td>₹{item.price}</td>
+                              <td>{item.quantity}</td>
+                              <td>₹{item.price * item.quantity}</td>
+                            </tr>
+                          ))}
+                          {order.items?.length > 2 && (
+                            <tr>
+                              <td colSpan="4" className="text-center text-muted small">
+                                +{order.items.length - 2} more items
+                              </td>
+                            </tr>
                           )}
-                          
-                          {['delivered', 'cancelled'].includes(order.status) && (
-                            <Button
-                              variant="outline-success"
-                              size="sm"
-                              onClick={() => handleReorder(order._id)}
-                              disabled={actionLoading}
-                              className="action-btn"
-                            >
-                              <FaRedo className="me-1" />
-                              Reorder
-                            </Button>
-                          )}
-                        </div>
-                      </Col>
-                    </Row>
-
-                    {/* Order Items Preview */}
-                    <Row className="mt-3">
-                      <Col>
-                        <div className="order-items-preview">
-                          <h6 className="mb-2">Items:</h6>
-                          <div className="items-grid">
-                            {order.items?.slice(0, 3).map((item, idx) => (
-                              <div key={idx} className="item-preview">
-                                {item.product?.images?.[0] && (
-                                  <img
-                                    src={item.product.images[0].url || '/images/placeholder-product.jpg'}
-                                    alt={item.product.name}
-                                    className="item-image"
-                                    onError={(e) => {
-                                      e.target.src = '/images/placeholder-product.jpg';
-                                    }}
-                                  />
-                                )}
-                                <div className="item-details">
-                                  <p className="item-name">{item.product?.name || 'Unknown Product'}</p>
-                                  <p className="item-quantity">Qty: {item.quantity}</p>
-                                  <p className="item-price">{formatCurrency(item.price)}</p>
-                                </div>
-                              </div>
-                            ))}
-                            {order.items?.length > 3 && (
-                              <div className="more-items">
-                                +{order.items.length - 3} more items
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </Col>
-                    </Row>
+                          <tr className="table-active">
+                            <td colSpan="3" className="fw-bold">Order Total:</td>
+                            <td className="fw-bold">₹{order.pricing?.total || 0}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="d-flex gap-2">
+                      <Button size="sm" onClick={() => navigate(`/orders/${order._id}`)} className="flex-fill">
+                        <FaEye className="me-1" /> View Details
+                      </Button>
+                      <Button size="sm" variant="success" onClick={() => handleReorder(order._id)} className="flex-fill">
+                        <FaRedo className="me-1" /> Reorder
+                      </Button>
+                    </div>
                   </Card.Body>
                 </Card>
-              );
-            })}
-          </div>
+              </Col>
+            ))}
+          </Row>
         )}
 
         {/* Order Details Modal */}

@@ -41,13 +41,10 @@ const Login = () => {
     setSuccess('');
 
     try {
-      console.log('🔄 Sending OTP to:', formData.email);
       const response = await authService.sendOTP(formData.email);
-      console.log('✅ OTP Response:', response);
       
       // Show OTP in development mode
       if (response.otp && process.env.NODE_ENV === 'development') {
-        console.log('🔐 Development OTP:', response.otp);
         setSuccess(`${response.message} (Dev OTP: ${response.otp})`);
       } else {
         setSuccess(response.message);
@@ -56,7 +53,6 @@ const Login = () => {
       setOtpSent(true);
       setStep(2);
     } catch (error) {
-      console.error('❌ Send OTP Error:', error);
       setError(error.message || 'Failed to send OTP. Please check your internet connection.');
     } finally {
       setLoading(false);
@@ -81,14 +77,11 @@ const Login = () => {
     setSuccess('');
 
     try {
-      console.log('🔄 Verifying OTP:', { email: formData.email, otp: formData.otp });
       const response = await authService.verifyOTP(
         formData.email, 
         formData.otp, 
         formData.name
       );
-      
-      console.log('✅ Login Response:', response);
       
       if (response.user && response.token) {
         await login(response.user);
@@ -98,7 +91,6 @@ const Login = () => {
         throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error('❌ Verify OTP Error:', error);
       if (error.attemptsLeft !== undefined) {
         setError(`${error.message} (${error.attemptsLeft} attempts left)`);
       } else {
@@ -115,18 +107,15 @@ const Login = () => {
     setSuccess('');
     
     try {
-      console.log('🔄 Resending OTP to:', formData.email);
       const response = await authService.sendOTP(formData.email);
       
       // Show OTP in development mode
       if (response.otp && process.env.NODE_ENV === 'development') {
-        console.log('🔐 Development OTP:', response.otp);
         setSuccess(`OTP resent successfully (Dev OTP: ${response.otp})`);
       } else {
         setSuccess('OTP resent successfully');
       }
     } catch (error) {
-      console.error('❌ Resend OTP Error:', error);
       if (error.retryAfter) {
         setError(`Please wait ${error.retryAfter} seconds before requesting another OTP`);
       } else {

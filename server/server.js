@@ -7,30 +7,9 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import multer from 'multer';
+import cluster from 'cluster';
+import os from 'os';
 
-dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
-const server = createServer(app);
-server.timeout = 0;
-server.keepAliveTimeout = 0;
-server.headersTimeout = 0;
-
-const io = new Server(server, {
-  cors: {
-    origin: ['http://localhost:5173'],
-    methods: ['GET', 'POST']
-  },
-  pingTimeout: 0,
-  pingInterval: 0
-});
-let port = process.env.PORT || 5000;
-
-// Make io available globally
-app.set('io', io);
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -42,6 +21,10 @@ import categoryRoutes from './routes/category.js';
 import addressRoutes from './routes/address.js';
 import adminRoutes from './routes/admin.js';
 import contactRoutes from './routes/contact.js';
+import paymentRoutes from './routes/payment.js';
+import seoRoutes from './routes/seo.js';
+import bundleRoutes from './routes/bundleRoutes.js';
+import giftBoxRoutes from './routes/giftBoxRoutes.js';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -50,20 +33,93 @@ import {
   otpRateLimiter,
   adminLoginLimiter
 } from './middleware/rateLimiter.js';
+// Performance middleware
+import { 
+  compressionMiddleware, 
+  cacheMiddleware,
+  memoryMonitor,
+  queueMiddleware,
+  optimizeDatabase,
+  checkDatabaseHealth
+} from './middleware/performance.js';
+import {
+  enhancedRateLimit,
+  connectionOptimizer,
+  requestSizeLimiter,
+  healthMonitor
+} from './middleware/basicOptimizations.js';
 
-// CORS
-app.use(cors({
-  origin: ['http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+dotenv.config();
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Static uploads - MUST be before routes
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Start server directly for now
+startServer();
+
+function startServer() {
+  const app = express();
+  const server = createServer(app);
+  
+  // Optimize server settings for high concurrency
+  server.timeout = 30000;
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
+  server.maxConnections = 1000;
+
+  const io = new Server(server, {
+    cors: {
+      origin: [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://sindhucrackers.com',
+        process.env.FRONTEND_URL || 'https://crackershop.netlify.app'
+      ],
+      methods: ['GET', 'POST']
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    maxHttpBufferSize: 1e6,
+    transports: ['websocket', 'polling']
+  });
+  let port = process.env.PORT || 5000;
+
+  // Make io available globally
+  app.set('io', io);
+  
+  // Initialize database optimizations
+  optimizeDatabase();
+
+  // Performance middleware
+  app.use(compressionMiddleware);
+  app.use(connectionOptimizer);
+  app.use(requestSizeLimiter);
+  app.use(healthMonitor);
+  app.use(enhancedRateLimit);
+  
+  // CORS with optimizations
+  app.use(cors({
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000', 
+      'https://sindhucrackers.com',
+      process.env.FRONTEND_URL || 'https://crackershop.netlify.app'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'x-admin-request'],
+    maxAge: 86400 // Cache preflight for 24 hours
+  }));
+
+  app.use(express.json({ limit: '10mb' })); // Reduced from 50mb
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Static uploads with caching
+  app.use('/uploads', cacheMiddleware(3600), express.static(path.join(__dirname, 'uploads'), {
+    maxAge: '1h',
+    etag: true,
+    lastModified: true
+  }));
 
 // Handle multer errors globally
 app.use((error, req, res, next) => {
@@ -95,59 +151,71 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply rate limiter only to auth routes and public endpoints
-app.use('/api/auth', rateLimiter);
-app.use('/api/admin/auth', rateLimiter);
+  // Request queuing for high load
+  app.use(queueMiddleware);
+  
+  // Apply rate limiter to all API routes
+  app.use('/api', rateLimiter);
+  
+  // Special limiters for sensitive endpoints
+  app.use('/api/auth/otp', otpRateLimiter);
+  app.use('/api/admin/auth/login', adminLoginLimiter);
 
-// Special limiters for sensitive endpoints only
-app.use('/api/auth/otp', otpRateLimiter);
-app.use('/api/admin/auth/login', adminLoginLimiter);
+  // Register routes with caching for read-only endpoints
+  app.use('/api/categories', cacheMiddleware(300), categoryRoutes);
+  app.use('/api/products', cacheMiddleware(180), productRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/admin/auth', adminAuthRoutes);
+  app.use('/api/cart', cartRoutes);
+  app.use('/api/orders', orderRoutes);
+  app.use('/api/addresses', addressRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/contact', contactRoutes);
+  app.use('/api/payment', paymentRoutes);
+  app.use('/api/bundles', cacheMiddleware(300), bundleRoutes);
+  app.use('/api/giftboxes', cacheMiddleware(300), giftBoxRoutes);
+  app.use('/', seoRoutes);
 
-// Register routes
-app.use('/api/categories', categoryRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/admin/auth', adminAuthRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/addresses', addressRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/contact', contactRoutes);
-
-// Health check (excluded from rate limit by middleware)
-app.get('/api/health', async (req, res) => {
-  try {
-    // Test database connection
-    const dbState = mongoose.connection.readyState;
-    const dbStates = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
-    
-    // Quick product count test
-    let productCount = 'N/A';
-    if (dbState === 1) {
-      try {
-        const Product = mongoose.model('Product');
-        productCount = await Product.countDocuments();
-      } catch (err) {
-        productCount = `Error: ${err.message}`;
-      }
+// Root route to show server is running
+app.get('/', (req, res) => {
+  res.json({
+    message: '🎆 Crackers E-Commerce Server is Running!',
+    status: 'Active',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/api/health',
+      products: '/api/products',
+      auth: '/api/auth',
+      admin: '/api/admin'
     }
-    
-    res.status(200).json({
-      message: 'Server is running',
-      timestamp: new Date().toISOString(),
-      database: {
-        status: dbStates[dbState] || 'unknown',
-        productCount
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Health check failed',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+  });
 });
+
+  // Enhanced health check
+  app.get('/api/health', async (req, res) => {
+    try {
+      const dbHealth = await checkDatabaseHealth();
+      const memUsage = process.memoryUsage();
+      
+      res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        database: dbHealth,
+        memory: {
+          used: Math.round(memUsage.heapUsed / 1024 / 1024),
+          total: Math.round(memUsage.heapTotal / 1024 / 1024)
+        },
+        uptime: Math.round(process.uptime()),
+        pid: process.pid
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'unhealthy',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 
 // Simple products test endpoint
 app.get('/api/products-test', async (req, res) => {
@@ -155,7 +223,6 @@ app.get('/api/products-test', async (req, res) => {
   try {
     const Product = mongoose.model('Product');
     
-    console.log('🔍 Testing simple product query...');
     const products = await Product.find({ isActive: true })
       .select('name price stock')
       .limit(5)
@@ -163,7 +230,6 @@ app.get('/api/products-test', async (req, res) => {
       .maxTimeMS(10000); // 10 second timeout
     
     const duration = Date.now() - startTime;
-    console.log(`✅ Test query completed in ${duration}ms`);
     
     res.json({
       success: true,
@@ -173,7 +239,6 @@ app.get('/api/products-test', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`❌ Test query failed in ${duration}ms:`, error.message);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -194,71 +259,97 @@ app.use((req, res) => {
   });
 });
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  // Optimized Socket.IO connection handling
+  io.on('connection', (socket) => {
+    console.log(`Socket connected: ${socket.id}`);
+    
+    // Rate limit socket events
+    const eventCounts = new Map();
+    const resetInterval = setInterval(() => eventCounts.clear(), 60000);
+    
+    socket.use((packet, next) => {
+      const event = packet[0];
+      const count = eventCounts.get(event) || 0;
+      
+      if (count > 50) { // 50 events per minute limit
+        return next(new Error('Rate limit exceeded'));
+      }
+      
+      eventCounts.set(event, count + 1);
+      next();
+    });
+    
+    socket.on('join-order', (orderId) => {
+      if (orderId && typeof orderId === 'string') {
+        socket.join(`order-${orderId}`);
+      }
+    });
 
-  // Join order room for real-time updates
-  socket.on('join-order', (orderId) => {
-    socket.join(`order-${orderId}`);
-    console.log(`User ${socket.id} joined order room: ${orderId}`);
+    socket.on('leave-order', (orderId) => {
+      if (orderId && typeof orderId === 'string') {
+        socket.leave(`order-${orderId}`);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      clearInterval(resetInterval);
+      console.log(`Socket disconnected: ${socket.id}`);
+    });
+    
+    socket.on('error', (error) => {
+      console.error(`Socket error: ${error.message}`);
+    });
   });
 
-  // Leave order room
-  socket.on('leave-order', (orderId) => {
-    socket.leave(`order-${orderId}`);
-    console.log(`User ${socket.id} left order room: ${orderId}`);
-  });
+  // Start server with enhanced error handling
+  const startServerInstance = () => {
+    server.listen(port, () => {
+      console.log(`🚀 Worker ${process.pid} running on port ${port}`);
+      console.log(`👍 Health check: http://localhost:${port}/api/health`);
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
-
-// Start server with port conflict handling
-const startServer = () => {
-  server.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-    console.log(`Health check: http://localhost:${port}/api/health`);
-
-    mongoose.connect(process.env.MONGODB)
-      .then(async () => {
-        console.log('MongoDB Connected...');
-        
-        // Drop the old phoneNumber index
-        try {
-          await mongoose.connection.db.collection('users').dropIndex('phoneNumber_1');
-          console.log('✅ Dropped old phoneNumber index');
-        } catch (error) {
-          console.log('ℹ️ phoneNumber index not found or already dropped');
-        }
+      mongoose.connect(process.env.MONGODB, {
+        maxPoolSize: 50,
+        minPoolSize: 5,
+        maxIdleTimeMS: 30000,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000
       })
-      .catch((err) => {
-        console.error('MongoDB connection error:', err);
+        .then(async () => {
+          console.log('✅ MongoDB Connected with optimized pool');
+          
+          try {
+            await mongoose.connection.db.collection('users').dropIndex('phoneNumber_1');
+          } catch (error) {
+            // Index not found or already dropped
+          }
+        })
+        .catch((err) => {
+          console.error('❌ MongoDB connection error:', err);
+          process.exit(1);
+        });
+    })
+    .on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is busy, trying port ${port + 1}`);
+        port = port + 1;
+        setTimeout(startServerInstance, 1000);
+      } else {
+        console.error('Server error:', err);
         process.exit(1);
-      });
-  })
-  .on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is busy, trying port ${port + 1}`);
-      port = port + 1;
-      setTimeout(startServer, 1000);
-    } else {
-      console.error('Server error:', err);
-      process.exit(1);
-    }
+      }
+    });
+  };
+
+  startServerInstance();
+
+  // Error handling
+  process.on('unhandledRejection', (err) => {
+    console.error('❌ Unhandled Promise Rejection:', err);
+    process.exit(1);
   });
-};
 
-startServer();
-
-// Handle unexpected errors
-process.on('unhandledRejection', (err) => {
-  console.error(' Unhandled Promise Rejection:', err);
-  process.exit(1);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
-});
+  process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+    process.exit(1);
+  });
+}

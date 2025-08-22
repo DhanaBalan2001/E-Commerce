@@ -278,18 +278,6 @@ export const sendOrderConfirmationEmail = async (email, orderNumber, orderDetail
                                 </thead>
                                 <tbody>
                                     ${itemsHtml}
-                                    <tr class="total-row">
-                                        <td colspan="3" style="padding: 10px; text-align: right;">Subtotal:</td>
-                                        <td style="padding: 10px; text-align: right;">₹${orderDetails.pricing.subtotal.toFixed(2)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="3" style="padding: 10px; text-align: right;">Tax (18%):</td>
-                                        <td style="padding: 10px; text-align: right;">₹${orderDetails.pricing.tax.toFixed(2)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="3" style="padding: 10px; text-align: right;">Shipping:</td>
-                                        <td style="padding: 10px; text-align: right;">₹${orderDetails.pricing.shipping.toFixed(2)}</td>
-                                    </tr>
                                     <tr class="total-row" style="font-size: 18px;">
                                         <td colspan="3" style="padding: 15px; text-align: right;">Total Amount:</td>
                                         <td style="padding: 15px; text-align: right; color: #28a745;">₹${orderDetails.pricing.total.toFixed(2)}</td>
@@ -492,7 +480,7 @@ export const sendAdminPasswordResetMockEmail = async (email, otp) => {
     };
 };
 
-export const sendAdminOrderNotification = async (order, user, orderDetails) => {
+export const sendAdminOrderNotification = async (order, user, orderDetails, screenshotPath = null) => {
     try {
         // Get all admins, super admins, and moderators
         const Admin = (await import('../models/Admin.js')).default;
@@ -536,7 +524,12 @@ export const sendAdminOrderNotification = async (order, user, orderDetails) => {
                     address: process.env.EMAIL_USER
                 },
                 to: admin.email,
-                subject: `🚨 New Order Alert - ${order.orderNumber}`,
+                subject: order._isPaymentVerification ? `🔔 Payment Verification Required - ${order.orderNumber}` : `🚨 New Order Alert - ${order.orderNumber}`,
+                attachments: order._isPaymentVerification && screenshotPath ? [{
+                    filename: 'payment-screenshot.jpg',
+                    path: screenshotPath,
+                    contentType: 'image/jpeg'
+                }] : [],
                 html: `
                     <!DOCTYPE html>
                     <html>
@@ -557,22 +550,23 @@ export const sendAdminOrderNotification = async (order, user, orderDetails) => {
                     <body>
                         <div class="container">
                             <div class="header">
-                                <h1>🚨 New Order Alert</h1>
-                                <p>Order requires your attention</p>
+                                <h1>${order._isPaymentVerification ? '🔔 Payment Verification Required' : '🚨 New Order Alert'}</h1>
+                                <p>${order._isPaymentVerification ? 'Payment screenshot submitted for verification' : 'Order requires your attention'}</p>
                             </div>
                             <div class="content">
                                 <div class="alert-box">
                                     <h3>Hello ${admin.name} (${admin.role.toUpperCase()}),</h3>
-                                    <p>A new order has been placed and requires processing:</p>
+                                    <p>${order._isPaymentVerification ? 'A customer has submitted payment proof. Please verify the payment screenshot in the admin panel.' : 'A new order has been confirmed and is ready for processing:'}</p>
                                 </div>
                                 
                                 <h3>📦 Order Details:</h3>
-                                <p><strong>Order Number:</strong> ${order.orderNumber}</p>
-                                <p><strong>Customer:</strong> ${user.name}</p>
-                                <p><strong>Email:</strong> ${user.email}</p>
-                                <p><strong>Phone:</strong> ${user.phone || 'Not provided'}</p>
-                                <p><strong>Payment Method:</strong> ${order.paymentInfo?.method || 'COD'}</p>
-                                <p><strong>Order Time:</strong> ${new Date(order.createdAt).toLocaleString('en-IN')}</p>
+                                <p><strong>Order Number:</strong> ${order.orderNumber || 'Generating...'}</p>
+                                <p><strong>Customer:</strong> ${user.name || 'N/A'}</p>
+                                <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
+                                <p><strong>Phone:</strong> ${user.phone || user.phoneNumber || 'Not provided'}</p>
+                                <p><strong>Payment Method:</strong> ${order.paymentInfo?.method === 'bank_transfer' ? 'BANK TRANSFER' : (order.paymentInfo?.method?.toUpperCase() || 'COD')}</p>
+                                <p><strong>Order Time:</strong> ${new Date().toLocaleString('en-IN')}</p>
+                                ${order._isPaymentVerification ? '<p><strong>Payment Screenshot:</strong> Attached to this email</p>' : ''}
                                 
                                 <h3>🛍️ Items Ordered:</h3>
                                 <table class="order-table">
@@ -594,7 +588,7 @@ export const sendAdminOrderNotification = async (order, user, orderDetails) => {
                                 
                                 <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0;">
                                     <strong>⚡ Action Required:</strong>
-                                    <p>Please log in to the admin panel to process this order and update its status.</p>
+                                    <p>${order._isPaymentVerification ? 'Log in to admin panel → Orders → View order details → Review screenshot → Approve/Reject payment' : 'Please log in to the admin panel to process this confirmed order and update its status.'}</p>
                                 </div>
                             </div>
                         </div>
@@ -706,6 +700,90 @@ export const sendContactNotificationEmail = async (admins, contactData) => {
       error: error.message
     };
   }
+};
+
+export const sendLowStockAlert = async (product) => {
+    try {
+        const Admin = (await import('../models/Admin.js')).default;
+        const admins = await Admin.find({ 
+            isActive: true, 
+            role: { $in: ['admin', 'super_admin'] } 
+        }).select('email name role');
+
+        if (admins.length === 0) {
+            return { success: false, message: 'No active admins found' };
+        }
+
+        if (!transporter) {
+            const initialized = initializeEmailService();
+            if (!initialized) {
+                return { success: false, message: 'Email service not available' };
+            }
+        }
+
+        const emailPromises = admins.map(admin => {
+            const mailOptions = {
+                from: {
+                    name: 'Sindhu Crackers Shop System',
+                    address: process.env.EMAIL_USER
+                },
+                to: admin.email,
+                subject: `⚠️ Low Stock Alert - ${product.name}`,
+                html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <title>Low Stock Alert</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; color: #333; }
+                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                            .header { background: #ffc107; color: #212529; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                            .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+                            .alert-box { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 15px 0; border-radius: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>⚠️ Low Stock Alert</h1>
+                                <p>Immediate attention required</p>
+                            </div>
+                            <div class="content">
+                                <h3>Hello ${admin.name},</h3>
+                                <div class="alert-box">
+                                    <p><strong>Product:</strong> ${product.name}</p>
+                                    <p><strong>Current Stock:</strong> ${product.stock} units</p>
+                                    <p><strong>Category:</strong> ${product.category?.name || 'Uncategorized'}</p>
+                                    <p><strong>Price:</strong> ₹${product.price}</p>
+                                </div>
+                                <p>This product is running low on stock. Please restock soon to avoid stockouts.</p>
+                                <p><strong>Time:</strong> ${new Date().toLocaleString('en-IN')}</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `
+            };
+            
+            return transporter.sendMail(mailOptions);
+        });
+
+        await Promise.all(emailPromises);
+        
+        return {
+            success: true,
+            message: `Low stock alert sent to ${admins.length} admin(s)`,
+            adminCount: admins.length
+        };
+
+    } catch (error) {
+        return {
+            success: false,
+            message: 'Failed to send low stock alert',
+            error: error.message
+        };
+    }
 };
 
 // Initialize email service on module load

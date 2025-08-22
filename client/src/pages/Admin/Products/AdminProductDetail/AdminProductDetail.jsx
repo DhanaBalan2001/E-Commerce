@@ -50,8 +50,8 @@ const AdminProductDetail = () => {
       const data = await productService.getProductById(productId);
       setProduct(data.product);
     } catch (error) {
-      toast.error('Failed to fetch product details');
       console.error('Error:', error);
+      toast.error('Failed to fetch product details');
     } finally {
       setLoading(false);
     }

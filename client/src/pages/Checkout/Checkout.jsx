@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
-import { cartService, orderService } from '../../services';
+import { cartService, orderService, authService } from '../../services';
 import './checkout.css';
 
 const Checkout = () => {
@@ -24,20 +24,26 @@ const Checkout = () => {
     landmark: '',
     phoneNumber: ''
   });
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
-    console.log('🛒 Checkout component mounted');
-    console.log('📍 Location state:', location.state);
-    console.log('🔐 Is authenticated:', isAuthenticated);
-    
     if (!isAuthenticated) {
-      console.log('❌ User not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
 
     loadCheckoutData();
-  }, [isAuthenticated, navigate, location.state]);
+    autoFillFromContext();
+  }, [isAuthenticated, navigate, location.state, user]);
+
+  const autoFillFromContext = () => {
+    if (user?.phoneNumber) {
+      setShippingAddress(prev => ({
+        ...prev,
+        phoneNumber: user.phoneNumber
+      }));
+    }
+  };
 
   const loadCheckoutData = async () => {
     try {
@@ -46,7 +52,6 @@ const Checkout = () => {
 
       // Try to get data from navigation state first
       if (location.state?.fromCart && location.state?.cartItems) {
-        console.log('✅ Using cart data from navigation state');
         setCartItems(location.state.cartItems);
         setCartTotal(location.state.cartTotal);
         setLoading(false);
@@ -60,7 +65,6 @@ const Checkout = () => {
         const isRecent = Date.now() - parsedData.timestamp < 5 * 60 * 1000; // 5 minutes
         
         if (isRecent && parsedData.cartItems?.length > 0) {
-          console.log('✅ Using cart data from localStorage backup');
           setCartItems(parsedData.cartItems);
           setCartTotal(parsedData.cartTotal);
           setLoading(false);
@@ -69,21 +73,17 @@ const Checkout = () => {
       }
 
       // Fallback: Fetch fresh cart data from server
-      console.log('🔄 Fetching fresh cart data from server');
       const response = await cartService.getCart();
       
       if (response.cart && response.cart.length > 0) {
-        console.log('✅ Fresh cart data loaded');
         setCartItems(response.cart);
         setCartTotal(response.cartTotal || 0);
       } else {
-        console.log('❌ No cart items found, redirecting to cart');
         navigate('/cart');
         return;
       }
 
     } catch (err) {
-      console.error('❌ Error loading checkout data:', err);
       setError('Failed to load checkout data. Redirecting to cart...');
       setTimeout(() => navigate('/cart'), 2000);
     } finally {
@@ -109,103 +109,81 @@ const Checkout = () => {
     
     if (!street.trim()) {
       setError('Please enter your street address');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return false;
     }
     if (!city.trim()) {
       setError('Please enter your city');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return false;
     }
     if (!state.trim()) {
       setError('Please enter your state');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return false;
     }
     if (!pincode.trim() || !/^[1-9][0-9]{5}$/.test(pincode)) {
       setError('Please enter a valid 6-digit pincode');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return false;
     }
     if (!phoneNumber.trim() || !/^[6-9]\d{9}$/.test(phoneNumber)) {
       setError('Please enter a valid 10-digit phone number');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return false;
     }
     
     return true;
   };
 
-  const handlePayOnline = async () => {
+  const handlePayNow = async () => {
     try {
       setError('');
       setPlacingOrder(true);
 
-      console.log('🚀 Starting online payment process');
-
-      // Validate address
       if (!validateAddress()) {
         setPlacingOrder(false);
         return;
       }
 
-      const { total } = calculateTotals();
-
-      // Initialize Razorpay
-      const options = {
-        key: 'rzp_test_9WseLWo2O8lk0C', // Replace with your Razorpay key
-        amount: Math.round(total * 100), // Amount in paise
-        currency: 'INR',
-        name: 'Crackers Store',
-        description: 'Order Payment',
-        image: '/logo.png',
-        handler: async function (response) {
-          console.log('✅ Payment successful:', response);
-          
-          // Prepare order data
-          const orderData = {
-            items: cartItems.map(item => ({
+      const { subtotal, tax, shipping, total } = calculateTotals();
+      
+      const orderData = {
+        items: cartItems.map(item => {
+          if (item.bundleInfo?.bundleId) {
+            return {
+              bundleId: item.bundleInfo.bundleId,
+              quantity: item.quantity,
+              type: 'bundle'
+            };
+          } else if (item.giftBoxInfo?.giftBoxId) {
+            return {
+              giftBoxId: item.giftBoxInfo.giftBoxId,
+              quantity: item.quantity,
+              type: 'giftbox'
+            };
+          } else {
+            return {
               product: item.product._id,
-              quantity: item.quantity
-            })),
-            shippingAddress,
-            paymentMethod: 'online',
-            paymentId: response.razorpay_payment_id
-          };
-
-          try {
-            // Create order after successful payment
-            const orderResponse = await orderService.createOrder(orderData);
-            
-            // Clear checkout data
-            localStorage.removeItem('checkoutData');
-            
-            // Show success message
-            alert('🎉 Payment successful! Order placed successfully!');
-            
-            // Redirect to orders page
-            navigate('/orders', { 
-              state: { 
-                orderPlaced: true, 
-                orderNumber: orderResponse.order?.orderNumber 
-              } 
-            });
-          } catch (err) {
-            console.error('❌ Error creating order after payment:', err);
-            setError('Payment successful but failed to create order. Please contact support.');
+              quantity: item.quantity,
+              type: 'product'
+            };
           }
-        },
-        prefill: {
-          name: user?.name || '',
-          email: user?.email || '',
-          contact: shippingAddress.phoneNumber || ''
-        },
-        theme: {
-          color: '#ff6b35'
-        }
+        }),
+        shippingAddress,
+        paymentMethod: 'bank_transfer'
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      // Navigate to bank details page
+      navigate('/bank-details', {
+        state: {
+          orderData,
+          orderTotal: total
+        }
+      });
 
     } catch (err) {
-      console.error('❌ Error initiating payment:', err);
-      setError(err.message || 'Failed to initiate payment. Please try again.');
+      setError(err.message || 'Failed to proceed. Please try again.');
     } finally {
       setPlacingOrder(false);
     }
@@ -376,44 +354,66 @@ const Checkout = () => {
               </Card.Header>
               <Card.Body>
                 <div className="order-items">
-                  {cartItems.map((item, index) => (
-                    <div key={item._id || index} className="order-item mb-3">
-                      <Row className="align-items-center">
-                        <Col xs={3} md={2}>
-                          <div className="item-image">
-                            {item.product?.images?.[0] ? (
-                              <img
-                                src={`${import.meta.env.VITE_API_BASE_URL}${item.product.images[0].url}`}
-                                alt={item.product.name}
-                                className="checkout-item-image"
-                                style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
-                                onError={(e) => {
-                                  e.target.src = '/placeholder-image.svg';
-                                }}
-                              />
-                            ) : (
-                              <div className="no-image-placeholder-small" style={{ width: '60px', height: '60px', backgroundColor: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', fontSize: '10px' }}>
-                                No Image
-                              </div>
-                            )}
-                          </div>
-                        </Col>
-                        <Col xs={5} md={6}>
-                          <div className="item-details">
-                            <h6 className="item-name mb-1">{item.product?.name || 'Unknown Product'}</h6>
-                            <p className="item-price mb-0 text-muted">₹{item.product?.price || 0} each</p>
-                            <small className="text-muted d-block d-md-none">Qty: {item.quantity}</small>
-                          </div>
-                        </Col>
-                        <Col xs={2} className="text-center d-none d-md-block">
-                          <span className="item-quantity">Qty: {item.quantity}</span>
-                        </Col>
-                        <Col xs={4} md={2} className="text-end">
-                          <strong>₹{((item.product?.price || 0) * item.quantity).toFixed(2)}</strong>
-                        </Col>
-                      </Row>
-                    </div>
-                  ))}
+                  {cartItems.map((item, index) => {
+                    // Handle different item types
+                    let itemName, itemPrice, itemTotal, itemImage;
+                    
+                    if (item.bundleInfo?.bundleId) {
+                      itemName = item.bundleInfo.bundleName;
+                      itemPrice = item.bundleInfo.bundlePrice;
+                      itemTotal = item.bundleInfo.bundlePrice * item.quantity;
+                      itemImage = null; // Bundles don't have images
+                    } else if (item.giftBoxInfo?.giftBoxId) {
+                      itemName = item.giftBoxInfo.giftBoxName;
+                      itemPrice = item.giftBoxInfo.giftBoxPrice;
+                      itemTotal = item.giftBoxInfo.giftBoxPrice * item.quantity;
+                      itemImage = null; // Gift boxes don't have images
+                    } else {
+                      itemName = item.product?.name || 'Unknown Product';
+                      itemPrice = item.product?.price || 0;
+                      itemTotal = (item.product?.price || 0) * item.quantity;
+                      itemImage = item.product?.images?.[0];
+                    }
+                    
+                    return (
+                      <div key={item._id || index} className="order-item mb-3">
+                        <Row className="align-items-center">
+                          <Col xs={3} md={2}>
+                            <div className="item-image">
+                              {itemImage ? (
+                                <img
+                                  src={`${import.meta.env.VITE_API_BASE_URL}${itemImage.url}`}
+                                  alt={itemName}
+                                  className="checkout-item-image"
+                                  style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
+                                  onError={(e) => {
+                                    e.target.src = '/placeholder-image.svg';
+                                  }}
+                                />
+                              ) : (
+                                <div className="no-image-placeholder-small" style={{ width: '60px', height: '60px', backgroundColor: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', fontSize: '24px' }}>
+                                  {item.bundleInfo ? '📦' : item.giftBoxInfo ? '🎁' : 'No Image'}
+                                </div>
+                              )}
+                            </div>
+                          </Col>
+                          <Col xs={5} md={6}>
+                            <div className="item-details">
+                              <h6 className="item-name mb-1">{itemName}</h6>
+                              <p className="item-price mb-0 text-muted">₹{itemPrice} each</p>
+                              <small className="text-muted d-block d-md-none">Qty: {item.quantity}</small>
+                            </div>
+                          </Col>
+                          <Col xs={2} className="text-center d-none d-md-block">
+                            <span className="item-quantity">Qty: {item.quantity}</span>
+                          </Col>
+                          <Col xs={4} md={2} className="text-end">
+                            <strong>₹{itemTotal.toFixed(2)}</strong>
+                          </Col>
+                        </Row>
+                      </div>
+                    );
+                  })}
                 </div>
               </Card.Body>
             </Card>
@@ -426,36 +426,97 @@ const Checkout = () => {
                 <h5 className="mb-0">Order Summary</h5>
               </Card.Header>
               <Card.Body>
-                <div className="summary-row d-flex justify-content-between mb-2">
-                  <span>Subtotal ({cartItems.length} items)</span>
-                  <span>{formatCurrency(subtotal)}</span>
+                {/* Product Details Table */}
+                <div className="table-responsive mb-3">
+                  <table className="table table-sm" style={{fontSize: '12px'}}>
+                    <thead>
+                      <tr>
+                        <th style={{padding: '8px 4px', border: 'none', fontWeight: '600'}}>Product</th>
+                        <th style={{padding: '8px 4px', border: 'none', fontWeight: '600', textAlign: 'center'}}>Price</th>
+                        <th style={{padding: '8px 4px', border: 'none', fontWeight: '600', textAlign: 'center'}}>Qty</th>
+                        <th style={{padding: '8px 4px', border: 'none', fontWeight: '600', textAlign: 'right'}}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cartItems.map((item, index) => {
+                        if (item.bundleInfo?.bundleId) {
+                          const totalAmount = item.bundleInfo.bundlePrice * item.quantity;
+                          return (
+                            <tr key={`bundle-${index}`}>
+                              <td style={{padding: '6px 4px', border: 'none'}}>{item.bundleInfo.bundleName}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'center'}}>{formatCurrency(item.bundleInfo.bundlePrice)}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'center'}}>{item.quantity}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'right', fontWeight: '600'}}>{formatCurrency(totalAmount)}</td>
+                            </tr>
+                          );
+                        } else if (item.giftBoxInfo?.giftBoxId) {
+                          const totalAmount = item.giftBoxInfo.giftBoxPrice * item.quantity;
+                          return (
+                            <tr key={`giftbox-${index}`}>
+                              <td style={{padding: '6px 4px', border: 'none'}}>{item.giftBoxInfo.giftBoxName}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'center'}}>{formatCurrency(item.giftBoxInfo.giftBoxPrice)}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'center'}}>{item.quantity}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'right', fontWeight: '600'}}>{formatCurrency(totalAmount)}</td>
+                            </tr>
+                          );
+                        } else {
+                          const totalAmount = (item.product?.price || 0) * item.quantity;
+                          return (
+                            <tr key={`product-${index}`}>
+                              <td style={{padding: '6px 4px', border: 'none'}}>{item.product?.name || 'Product'}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'center'}}>{formatCurrency(item.product?.price || 0)}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'center'}}>{item.quantity}</td>
+                              <td style={{padding: '6px 4px', border: 'none', textAlign: 'right', fontWeight: '600'}}>{formatCurrency(totalAmount)}</td>
+                            </tr>
+                          );
+                        }
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="summary-row d-flex justify-content-between mb-2">
-                  <span>Tax (18% GST)</span>
-                  <span>{formatCurrency(tax)}</span>
+                
+                <div className="summary-row total-row" style={{display: 'flex', justifyContent: 'space-between', marginBottom: '15px'}}>
+                  <span className="summary-label"><strong>Total:</strong></span>
+                  <span className="summary-value"><strong>{formatCurrency(cartTotal)}</strong></span>
                 </div>
-                                <div className="summary-row d-flex justify-content-between mb-2">
-                  <span>Shipping</span>
-                  <span>
-                    {shipping === 0 ? (
-                      <span className="text-success">FREE</span>
-                    ) : (
-                      formatCurrency(shipping)
-                    )}
-                  </span>
-                </div>
-                <hr />
-                <div className="summary-row d-flex justify-content-between mb-3">
-                  <strong>Total Amount</strong>
-                  <strong>{formatCurrency(total)}</strong>
-                </div>
+                
+                {/* Complimentary Gifts Notice */}
+                {cartTotal >= 3000 && (
+                  <div className="complimentary-gifts-notice" style={{
+                    backgroundColor: '#d4edda',
+                    color: '#155724',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    marginBottom: '15px',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    🎁 Congratulations! You get complimentary gifts with this order!
+                  </div>
+                )}
+                
+                {cartTotal < 3000 && (
+                  <div className="complimentary-gifts-notice" style={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    marginBottom: '15px',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    🎁 Purchase above ₹3000 and get complimentary gifts!
+                  </div>
+                )}
               </Card.Body>
               <Card.Footer>
                 <Button
                   variant="primary"
                   size="lg"
                   className="w-100 mb-3"
-                  onClick={handlePayOnline}
+                  onClick={handlePayNow}
                   disabled={placingOrder}
                 >
                   {placingOrder ? (
@@ -471,7 +532,7 @@ const Checkout = () => {
                       Processing...
                     </>
                   ) : (
-                    'Pay Online'
+                    'Pay Now'
                   )}
                 </Button>
                 <Button

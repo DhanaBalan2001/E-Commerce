@@ -9,36 +9,34 @@ const publicGetRoutes = [
   '/api/health'
 ];
 
-// Smart rate limiter that uses user ID for authenticated requests
+// Enhanced rate limiter with burst handling
 export const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 500 : 5000,
+  max: (req) => {
+    if (req.path.includes('/auth/')) return 20;
+    if (req.path.includes('/payment/')) return 10;
+    if (req.method === 'GET') return 1000;
+    return process.env.NODE_ENV === 'production' ? 200 : 2000;
+  },
   keyGenerator: (req) => {
-    // For authenticated requests, use user/admin ID instead of IP
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT);
-        return `user_${decoded.id}`;
+        return `user_${decoded.id}_${decoded.type || 'user'}`;
       } catch (error) {
-        // If token is invalid, fall back to IP
-        return req.ip;
+        return `ip_${req.ip}`;
       }
     }
-    return req.ip;
+    return `ip_${req.ip}`;
   },
   skip: (req) => {
-    // Skip rate limiting for authenticated admin routes
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (token && req.path.includes('/admin/') && !req.path.includes('/admin/auth/')) {
       try {
         const decoded = jwt.verify(token, process.env.JWT);
-        if (decoded.type === 'admin') {
-          return true; // Skip rate limiting for authenticated admin
-        }
-      } catch (error) {
-        // Invalid token, apply rate limiting
-      }
+        if (decoded.type === 'admin') return true;
+      } catch (error) {}
     }
     
     return (
@@ -52,7 +50,14 @@ export const rateLimiter = rateLimit({
     retryAfter: '15 minutes'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: 'Rate limit exceeded. Please try again later.',
+      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
+    });
+  }
 });
 
 // OTP rate limiter with automatic logout

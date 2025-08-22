@@ -89,8 +89,6 @@ const ProductDetail = () => {
     });
   };
 
-  
-
   if (loading) {
     return (
       <Container className="py-5 text-center">

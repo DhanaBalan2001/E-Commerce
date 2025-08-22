@@ -170,8 +170,8 @@ const AdminUsers = () => {
         fetchUserStats();
       }
     } catch (error) {
-      toast.error('Failed to update user status');
       console.error('Error:', error);
+      toast.error('Failed to update user status');
     }
   };
 

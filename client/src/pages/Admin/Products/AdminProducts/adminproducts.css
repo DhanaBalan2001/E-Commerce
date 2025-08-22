@@ -4,6 +4,8 @@
   min-height: 100vh;
   padding: 1rem;
   font-family: 'Poppins', sans-serif;
+  will-change: auto;
+  contain: layout style;
 }
 
 .page-header {
@@ -169,6 +171,35 @@ font-weight: 700;
   pointer-events: none;
 }
 
+.search-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-input-group .form-control {
+  flex: 1;
+}
+
+.search-btn {
+  background: #ff6b35;
+  border: none;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 45px;
+}
+
+.search-btn:hover {
+  background: #e55a2b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
 /* Products Table */
 .products-table-card {
   background: white;
@@ -207,6 +238,7 @@ font-weight: 700;
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  table-layout: fixed;
 }
 
 .products-table th {
@@ -225,6 +257,7 @@ font-weight: 700;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
+  contain: layout;
 }
 
 .products-table td:last-child {
@@ -232,12 +265,11 @@ font-weight: 700;
 }
 
 .products-table tbody tr {
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .products-table tbody tr:hover {
   background: #f8fafc;
-  transform: scale(1.01);
 }
 
 /* Product Info */
@@ -522,6 +554,18 @@ font-weight: 700;
     box-sizing: border-box !important;
   }
   
+  .search-input-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .search-btn {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    min-width: auto;
+  }
+  
   .form-select {
     max-height: 32px !important;
   }
@@ -746,9 +790,10 @@ font-weight: 700;
 
 /* Product Image Styles */
 .products-table img {
-  transition: opacity 0.3s ease;
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
+  will-change: auto;
+  contain: layout size;
 }
 
 .products-table img[src="/placeholder-image.jpg"] {
@@ -756,11 +801,25 @@ font-weight: 700;
 }
 
 .mobile-product-card img {
-  transition: opacity 0.3s ease;
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
+  will-change: auto;
+  contain: layout size;
 }
 
 .mobile-product-card img[src="/placeholder-image.jpg"] {
   opacity: 0.7;
+}
+
+/* Prevent layout shifts */
+.products-table img,
+.mobile-product-card img {
+  display: block;
+  min-width: 50px;
+  min-height: 50px;
+}
+
+.mobile-product-card img {
+  min-width: 60px;
+  min-height: 60px;
 }

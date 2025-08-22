@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Nav, Navbar, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { FaBars, FaTachometerAlt, FaBoxOpen, FaList, FaShoppingCart, FaUsers, FaCog, FaUser, FaArrowLeft } from 'react-icons/fa';
+import { FaBars, FaTachometerAlt, FaBoxOpen, FaList, FaShoppingCart, FaUsers, FaCog, FaUser, FaArrowLeft, FaGift } from 'react-icons/fa';
 import api from '../../../services/api';
 import './adminlayout.css';
 
@@ -102,6 +102,24 @@ const AdminLayout = () => {
             >
               <FaList className="me-2" />
               Categories
+            </Nav.Link>
+            <Nav.Link 
+              as={Link} 
+              to="/admin/bundles"
+              className="admin-nav-link"
+              onClick={handleNavClick}
+            >
+              <FaGift className="me-2" />
+              Bundles
+            </Nav.Link>
+            <Nav.Link 
+              as={Link} 
+              to="/admin/giftboxes"
+              className="admin-nav-link"
+              onClick={handleNavClick}
+            >
+              <FaGift className="me-2" />
+              Gift Boxes
             </Nav.Link>
             <Nav.Link 
               as={Link} 

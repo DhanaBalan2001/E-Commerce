@@ -28,6 +28,8 @@ const Products = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
+  const [showPerPageModal, setShowPerPageModal] = useState(false);
+  const [quantities, setQuantities] = useState({});
 
   // Get user from context but don't redirect if not authenticated
   const { user } = useAppContext();
@@ -35,7 +37,7 @@ const Products = () => {
   const navigate = useNavigate();
 
   // Use hooks but handle authentication errors gracefully
-  const { data: productsData, loading, error, refetch } = useProducts();
+  const { data: productsData, loading, error, refetch } = useProducts(filters);
   const { data: categoriesData } = useCategories();
   const { addToCart, addToCartLoading } = useCart();
 
@@ -45,23 +47,7 @@ const Products = () => {
   const total = productsData?.total || 0;
   const categories = categoriesData?.categories || [];
 
-  // Debug logging
-  console.log('Products data:', { productsData, loading, error, products: products.length });
 
-  // Test direct API call
-  useEffect(() => {
-    const testAPI = async () => {
-      try {
-        console.log('Testing direct API call...');
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/health`);
-        const data = await response.json();
-        console.log('Health check response:', data);
-      } catch (err) {
-        console.error('Health check failed:', err);
-      }
-    };
-    testAPI();
-  }, []);
 
   // Handle mobile detection
   useEffect(() => {
@@ -110,6 +96,13 @@ const Products = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleQuantityChange = (productId, newQuantity) => {
+    const quantity = Math.max(1, parseInt(newQuantity) || 1);
+    setQuantities(prev => ({ ...prev, [productId]: quantity }));
+  };
+
+  const getQuantity = (productId) => quantities[productId] || 1;
+
   const handleAddToCart = async (productId) => {
     // Check if user is logged in
     if (!user) {
@@ -119,7 +112,8 @@ const Products = () => {
     }
 
     try {
-      await addToCart.mutate({ productId, quantity: 1 });
+      const quantity = getQuantity(productId);
+      await addToCart.mutate({ productId, quantity });
       
       // Scroll to top on desktop to show notification
       if (window.innerWidth > 768) {
@@ -216,12 +210,27 @@ const Products = () => {
               <div className="filter-section">
                 <Form.Group>
                   <Form.Label>Search Products</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search..."
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                  />
+                  <div className="d-flex gap-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="Search..."
+                      value={filters.search}
+                      onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleFilterChange('search', filters.search);
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleFilterChange('search', filters.search)}
+                      style={{ minWidth: '60px' }}
+                    >
+                      Search
+                    </Button>
+                  </div>
                 </Form.Group>
               </div>
 
@@ -299,7 +308,11 @@ const Products = () => {
                         type="number"
                         placeholder="Min Price"
                         value={filters.minPrice}
-                        onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                        onChange={(e) => {
+                          const value = Math.max(0, parseFloat(e.target.value) || 0);
+                          handleFilterChange('minPrice', value || '');
+                        }}
+                        min="0"
                       />
                     </Col>
                     <Col>
@@ -307,7 +320,11 @@ const Products = () => {
                         type="number"
                         placeholder="Max Price"
                         value={filters.maxPrice}
-                        onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                        onChange={(e) => {
+                          const value = Math.max(0, parseFloat(e.target.value) || 0);
+                          handleFilterChange('maxPrice', value || '');
+                        }}
+                        min="0"
                       />
                     </Col>
                   </Row>
@@ -357,6 +374,8 @@ const Products = () => {
                   )}
                 </Form.Group>
               </div>
+
+
             </div>
           </Col>
 
@@ -367,22 +386,40 @@ const Products = () => {
               <Row className="align-items-center">
                 <Col>
                   <h4> Products</h4>
-                  <p className="mb-0 text-muted">
-                    Showing {products.length} of {total} products
-                  </p>
+                  {isMobile ? (
+                    <div className="d-flex align-items-center justify-content-between">
+                      <p className="mb-0 text-muted">
+                        Showing {products.length} of {total} products
+                      </p>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => setShowPerPageModal(true)}
+                        style={{ minWidth: '70px', fontSize: '0.7rem', whiteSpace: 'nowrap', marginLeft: '10px', padding: '0.3rem 0.5rem' }}
+                      >
+                        {filters.limit} per page
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="mb-0 text-muted">
+                      Showing {products.length} of {total} products
+                    </p>
+                  )}
                 </Col>
-                <Col xs="auto">
-                  <Form.Select
-                    size="sm"
-                    value={filters.limit}
-                    onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                    style={{ width: 'auto' }}
-                  >
-                    <option value={12}>12 per page</option>
-                    <option value={24}>24 per page</option>
-                    <option value={48}>48 per page</option>
-                  </Form.Select>
-                </Col>
+                {!isMobile && (
+                  <Col xs="auto">
+                    <Form.Select
+                      size="sm"
+                      value={filters.limit}
+                      onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
+                      style={{ width: 'auto' }}
+                    >
+                      <option value={12}>12 per page</option>
+                      <option value={24}>24 per page</option>
+                      <option value={48}>48 per page</option>
+                    </Form.Select>
+                  </Col>
+                )}
               </Row>
             </div>
 
@@ -420,7 +457,7 @@ const Products = () => {
                     {products.map(product => (
                       <Col lg={4} md={6} xs={6} key={product._id} className="mb-4">
                         <Card className="product-card h-100">
-                          <div className="product-image-container" style={{height: window.innerWidth <= 768 ? '95px' : '200px', maxHeight: window.innerWidth <= 768 ? '95px' : '200px'}}>
+                          <div className="product-image-container" style={{height: window.innerWidth <= 768 ? '95px' : '120px', maxHeight: window.innerWidth <= 768 ? '95px' : '120px'}}>
                             <img
                               src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/placeholder-image.jpg'}
                               alt={product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name}
@@ -457,10 +494,45 @@ const Products = () => {
                               )}
                             </div>
                             
+                            {/* Quantity Control */}
+                            <div className="quantity-control mb-2">
+                              <div className="d-flex align-items-center justify-content-center">
+                                <button
+                                  className="btn btn-outline-secondary btn-sm"
+                                  onClick={() => handleQuantityChange(product._id, getQuantity(product._id) - 1)}
+                                  disabled={getQuantity(product._id) <= 1}
+                                  style={{width: '30px', height: '30px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  className="form-control mx-2 text-center"
+                                  value={getQuantity(product._id)}
+                                  onChange={(e) => {
+                                    const newQuantity = Math.max(1, parseInt(e.target.value) || 1);
+                                    handleQuantityChange(product._id, newQuantity);
+                                  }}
+                                  min="1"
+                                  max={product.stock || 999}
+                                  style={{width: '60px', fontSize: '14px', textAlign: 'center'}}
+                                />
+                                <button
+                                  className="btn btn-outline-secondary btn-sm"
+                                  onClick={() => handleQuantityChange(product._id, getQuantity(product._id) + 1)}
+                                  disabled={getQuantity(product._id) >= (product.stock || 999)}
+                                  style={{width: '30px', height: '30px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            
                             <div className="product-actions" style={{marginTop: window.innerWidth <= 768 ? '-0.5rem' : 'auto'}}>
-                              <Row className={window.innerWidth <= 768 ? 'g-1' : ''}>
-                                <Col>
-                                  <Button
+                              {isMobile ? (
+                                // Mobile layout: stacked buttons
+                                <>
+                                 <Button
                                     variant="outline-primary"
                                     size="sm"
                                     as={Link}
@@ -469,19 +541,38 @@ const Products = () => {
                                   >
                                     View
                                   </Button>
-                                </Col>
-                                <Col>
+                                    <Button
+                                    variant="primary"
+                                    size="sm"
+                                    className="w-100 mb-2 mobile-btn-small"
+                                    onClick={() => handleAddToCart(product._id)}
+                                    disabled={addToCartLoading}
+                                  >
+                                    Add
+                                  </Button>
+                                </>
+                              ) : (
+                                // Desktop layout: side by side buttons
+                                <div className="d-flex gap-2">
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="w-100 mobile-btn-small"
-                                    disabled={product.stock === 0 || addToCartLoading}
+                                    className="flex-grow-1"
                                     onClick={() => handleAddToCart(product._id)}
+                                    disabled={addToCartLoading}
                                   >
-                                    {addToCartLoading ? 'Adding...' : 'Add'}
+                                    Add
                                   </Button>
-                                </Col>
-                              </Row>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    as={Link}
+                                    to={`/products/${product._id}`}
+                                  >
+                                    View
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </Card.Body>
                         </Card>
@@ -639,6 +730,34 @@ const Products = () => {
                   setShowSortModal(false);
                 }}
                 active={`${filters.sortBy}-${filters.sortOrder}` === option.value}
+              >
+                {option.label}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Modal.Body>
+      </Modal>
+      
+      {/* Items Per Page Modal for Mobile */}
+      <Modal show={showPerPageModal} onHide={() => setShowPerPageModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Items Per Page</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ padding: 0 }}>
+          <ListGroup variant="flush">
+            {[
+              { value: 12, label: '12 per page' },
+              { value: 24, label: '24 per page' },
+              { value: 48, label: '48 per page' }
+            ].map(option => (
+              <ListGroup.Item
+                key={option.value}
+                action
+                onClick={() => {
+                  handleFilterChange('limit', option.value);
+                  setShowPerPageModal(false);
+                }}
+                active={filters.limit === option.value}
               >
                 {option.label}
               </ListGroup.Item>

@@ -194,6 +194,16 @@ export const updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
+        
+        console.log('🔄 Updating category:', id);
+        console.log('📁 Has file:', !!req.file);
+        if (req.file) {
+            console.log('🖼️ File details:', {
+                filename: req.file.filename,
+                size: req.file.size,
+                mimetype: req.file.mimetype
+            });
+        }
 
         if (updateData.name) {
             updateData.slug = updateData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -201,6 +211,7 @@ export const updateCategory = async (req, res) => {
 
         if (req.file) {
             updateData.image = getImageUrl(req.file.filename);
+            console.log('🖼️ New image URL:', updateData.image);
         }
 
         if (updateData.subCategories) {
@@ -263,14 +274,6 @@ export const deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const productCount = await Product.countDocuments({ category: id });
-        if (productCount > 0) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Cannot delete category with existing products' 
-            });
-        }
-
         const category = await Category.findByIdAndDelete(id);
         if (!category) {
             return res.status(404).json({ 
@@ -278,6 +281,12 @@ export const deleteCategory = async (req, res) => {
                 message: 'Category not found' 
             });
         }
+
+        // Optional: Update products to remove category reference
+        await Product.updateMany(
+            { category: id },
+            { $unset: { category: 1 } }
+        );
 
         res.status(200).json({ 
             success: true,

@@ -11,9 +11,28 @@ const orderSchema = new mongoose.Schema({
         required: true
     },
     items: [{
+        // For regular products
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product',
+            required: false
+        },
+        // For bundles
+        bundleId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Bundle',
+            required: false
+        },
+        // For gift boxes
+        giftBoxId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'GiftBox',
+            required: false
+        },
+        // Item type identifier
+        type: {
+            type: String,
+            enum: ['product', 'bundle', 'giftbox'],
             required: true
         },
         name: { type: String, required: true },
@@ -46,19 +65,27 @@ const orderSchema = new mongoose.Schema({
     paymentInfo: {
         method: {
             type: String,
-            enum: ['cod', 'razorpay'],
+            enum: ['cod', 'bank_transfer'],
             required: true
         },
         status: {
             type: String,
-            enum: ['pending', 'completed', 'failed', 'refunded'],
+            enum: ['pending', 'completed', 'failed', 'refunded', 'verification_pending'],
             default: 'pending'
         },
-        razorpayOrderId: String,
-        razorpayPaymentId: String,
-        razorpaySignature: String,
+        paymentScreenshot: {
+            filename: String,
+            path: String,
+            uploadedAt: Date
+        },
+        verifiedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Admin'
+        },
+        verifiedAt: Date,
         paidAt: Date,
-        failureReason: String
+        failureReason: String,
+        adminNotes: String
     },
     status: {
         type: String,

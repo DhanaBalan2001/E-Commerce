@@ -41,13 +41,29 @@ const AdminCategoryForm = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [showSubcategoryForm, setShowSubcategoryForm] = useState(false);
   const [showMobileSubcategory, setShowMobileSubcategory] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: categoriesData } = useCategories();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
+
+  // Listen for successful operations
+  useEffect(() => {
+    const handleSuccess = () => {
+      // Force refresh the categories list
+      window.dispatchEvent(new CustomEvent('forceRefresh'));
+    };
+
+    window.addEventListener('categoryUpdated', handleSuccess);
+    window.addEventListener('categoryCreated', handleSuccess);
+
+    return () => {
+      window.removeEventListener('categoryUpdated', handleSuccess);
+      window.removeEventListener('categoryCreated', handleSuccess);
+    };
+  }, []);
 
   // Load category data for editing
   useEffect(() => {
@@ -62,14 +78,28 @@ const AdminCategoryForm = () => {
           isActive: category.isActive !== false,
           subCategories: category.subCategories || []
         });
-        // Clear image preview when loading existing category
         setImagePreview(null);
       }
     } else if (!isEdit) {
-      // Clear everything for new category
+      setFormData({
+        name: '',
+        slug: '',
+        description: '',
+        image: '',
+        isActive: true,
+        subCategories: []
+      });
       setImagePreview(null);
     }
   }, [isEdit, id, categoriesData]);
+
+  // Force refresh category data when component mounts in edit mode
+  useEffect(() => {
+    if (isEdit) {
+      // Force a fresh fetch of categories to get latest data
+      window.dispatchEvent(new CustomEvent('forceRefresh'));
+    }
+  }, [isEdit, id]);
 
   // Generate slug from name
   const generateSlug = (name) => {
@@ -186,8 +216,6 @@ const AdminCategoryForm = () => {
       return;
     }
 
-    setLoading(true);
-
     try {
       const categoryData = new FormData();
       categoryData.append('name', formData.name);
@@ -203,54 +231,50 @@ const AdminCategoryForm = () => {
         categoryData.append('image', formData.imageFile);
       }
 
+      setIsSubmitting(true);
+      
       if (isEdit) {
-        await updateCategory.mutate({ id: id, data: categoryData });
-        // Refetch category data to show updated image
-        const updatedCategory = categoriesData.categories.find(cat => cat._id === id);
-        if (updatedCategory) {
-          setFormData({
-            name: updatedCategory.name || '',
-            slug: updatedCategory.slug || '',
-            description: updatedCategory.description || '',
-            image: updatedCategory.image || '',
-            isActive: updatedCategory.isActive !== false,
-            subCategories: updatedCategory.subCategories || []
-          });
-        }
+        await updateCategory.mutateAsync({ id: id, data: categoryData });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.success('Category updated successfully!');
+        
+        // Clear form state
+        setFormData(prev => ({ ...prev, imageFile: null }));
         setImagePreview(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        // Scroll to top after successful update
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast.success('Category updated successfully');
+        
+        // Trigger refresh events
+        localStorage.setItem('categoryListNeedsRefresh', 'true');
+        window.dispatchEvent(new CustomEvent('categoryUpdated'));
+        window.dispatchEvent(new CustomEvent('forceRefresh'));
+        
+        // Auto redirect after 3 seconds
+        setTimeout(() => {
+          navigate('/admin/categories');
+        }, 3000);
       } else {
-        const result = await createCategory.mutate(categoryData);
-        // Update form data with the response to show the uploaded image
-        if (result?.category) {
-          setFormData(prev => ({
-            ...prev,
-            image: result.category.image || prev.image,
-            imageFile: null // Clear the file since it's now uploaded
-          }));
-          setImagePreview(null); // Clear preview since we now have the actual image
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Clear file input
-          }
-        }
-        // Scroll to top after successful creation
+        await createCategory.mutateAsync(categoryData);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast.success('Category created successfully');
+        toast.success('Category created successfully!');
+        
+        // Trigger refresh events
+        localStorage.setItem('categoryListNeedsRefresh', 'true');
+        window.dispatchEvent(new CustomEvent('categoryCreated'));
+        window.dispatchEvent(new CustomEvent('forceRefresh'));
+        
+        // Auto redirect after 3 seconds
+        setTimeout(() => {
+          navigate('/admin/categories');
+        }, 3000);
       }
-
-      // Navigate after 2-3 seconds
-      setTimeout(() => {
-        navigate('/admin/categories');
-      }, 2500);
+      
+      setIsSubmitting(false);
     } catch (error) {
-      toast.error(error.message || 'Failed to save category');
-    } finally {
-      setLoading(false);
+      setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.error(error?.message || 'Failed to save category');
     }
   };
 
@@ -367,10 +391,14 @@ const AdminCategoryForm = () => {
                       </small>
                       <div className="mt-1">
                         <img 
-                          src={imagePreview || (formData.image ? `${import.meta.env.VITE_API_BASE_URL}${formData.image}` : '/placeholder-image.jpg')} 
+                          src={imagePreview || (formData.image ? `${import.meta.env.VITE_API_BASE_URL}${formData.image}?v=${Date.now()}&cache=${Math.random()}` : '/placeholder-image.jpg')} 
                           alt={imagePreview ? 'Preview' : 'Current category image'} 
                           className="img-thumbnail"
                           style={{ maxWidth: '150px', maxHeight: '150px' }}
+                          key={`${formData.image}-${Date.now()}`}
+                          onError={(e) => {
+                            e.target.src = '/placeholder-image.jpg';
+                          }}
                         />
                       </div>
                       {!imagePreview && (
@@ -414,12 +442,12 @@ const AdminCategoryForm = () => {
                   <Button
                     type="submit"
                     variant="primary"
-                    disabled={loading}
+                    disabled={createCategory.loading || updateCategory.loading || isSubmitting}
                   >
-                    {loading ? (
+                    {(createCategory.loading || updateCategory.loading || isSubmitting) ? (
                       <>
                         <Spinner size="sm" className="me-2" />
-                        Saving...
+                        {isEdit ? 'Updating...' : 'Creating...'}
                       </>
                     ) : (
                       <>

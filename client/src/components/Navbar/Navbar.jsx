@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Navbar, Nav, Container, Badge, Dropdown } from 'react-bootstrap';
-import { FaShoppingCart, FaFireAlt, FaHome, FaBoxOpen, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaShoppingCart, FaFireAlt, FaHome, FaBoxOpen, FaUser, FaSignOutAlt, FaGift } from 'react-icons/fa';
 import { MdCategory } from 'react-icons/md';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useCartCount } from '../../hooks/useCart';
+import { useCart } from '../../context/AppContext';
 import { useAppContext } from '../../context/AppContext';
 import { authService } from '../../services';
 import './navbar.css';
 
 const CustomNavbar = () => {
-  const cartCount = useCartCount();
+  const { cartCount } = useCart();
   const { user, logout } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,7 +54,6 @@ const CustomNavbar = () => {
       logout();
       navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
       // Force logout even if API call fails
       logout();
       navigate('/');
@@ -89,7 +88,7 @@ const CustomNavbar = () => {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         
         <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto">
+          <Nav className="ms-auto" style={{paddingLeft: '3rem'}}>
             <Nav.Link 
               onClick={() => handleNavClick('/')} 
               className={getNavLinkClass('/')}
@@ -104,6 +103,22 @@ const CustomNavbar = () => {
               style={{ cursor: 'pointer' }}
             >
               <FaBoxOpen /> <span>Products</span>
+            </Nav.Link>
+            
+            <Nav.Link 
+              onClick={() => handleNavClick('/bundles')} 
+              className={getNavLinkClass('/bundles')}
+              style={{ cursor: 'pointer' }}
+            >
+              <FaGift /> <span>Bundles</span>
+            </Nav.Link>
+            
+            <Nav.Link 
+              onClick={() => handleNavClick('/giftboxes')} 
+              className={getNavLinkClass('/giftboxes')}
+              style={{ cursor: 'pointer' }}
+            >
+              <FaGift /> <span>Gift Boxes</span>
             </Nav.Link>
             
             <Nav.Link 
@@ -124,7 +139,7 @@ const CustomNavbar = () => {
                   <FaShoppingCart className="cart-icon" />
                   <span className="cart-text">Cart</span>
                   {cartCount > 0 && (
-                    <Badge bg="danger" className="cart-badge">
+                    <Badge bg="danger" className="cart-badge ms-1">
                       {cartCount > 99 ? '99+' : cartCount}
                     </Badge>
                   )}

@@ -44,13 +44,12 @@ const AdminOrderDetail = () => {
     fetchOrderDetails();
   }, [id]);
 
+
+
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      console.log('Fetching order details for ID:', id);
-      
       const response = await api.get(`/admin/orders/${id}`);
-      console.log('Order details response:', response.data);
       
       if (response.data.success) {
         setOrder(response.data.order);
@@ -88,6 +87,27 @@ const AdminOrderDetail = () => {
       toast.error(error.response?.data?.message || 'Failed to update order status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handlePaymentVerification = async (approved) => {
+    const adminNotes = approved ? 'Payment verified and approved' : 'Payment rejected - invalid or insufficient proof';
+    
+    try {
+      const response = await api.put(`/admin/orders/${id}/verify-payment`, {
+        approved,
+        adminNotes
+      });
+      
+      if (response.data.success) {
+        toast.success(approved ? 'Payment approved successfully' : 'Payment rejected');
+        await fetchOrderDetails();
+      } else {
+        throw new Error(response.data.message || 'Failed to verify payment');
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      toast.error(error.response?.data?.message || 'Failed to verify payment');
     }
   };
 
@@ -333,6 +353,127 @@ const AdminOrderDetail = () => {
             </Card.Body>
           </Card>
 
+          {/* Payment Information */}
+          <Card className="mb-4">
+            <Card.Header>
+              <h5 className="mb-0">Payment Information</h5>
+            </Card.Header>
+            <Card.Body>
+              <div className="payment-info">
+                <div className="mb-3">
+                  <strong>Payment Method: </strong>
+                  <Badge bg="info">
+                    {order.paymentInfo?.method === 'bank_transfer' ? 'Bank Transfer' : 
+                     order.paymentInfo?.method === 'cod' ? 'Cash on Delivery' : 
+                     order.paymentInfo?.method || 'N/A'}
+                  </Badge>
+                </div>
+                
+                <div className="mb-3">
+                  <strong>Payment Status: </strong>
+                  <Badge bg={order.paymentInfo?.status === 'completed' ? 'success' : 
+                            order.paymentInfo?.status === 'verification_pending' ? 'warning' : 'secondary'}>
+                    {order.paymentInfo?.status === 'verification_pending' ? 'Pending Verification' : 
+                     order.paymentInfo?.status === 'completed' ? 'Verified & Completed' : 
+                     order.paymentInfo?.status || 'Pending'}
+                  </Badge>
+                </div>
+                
+                {/* Bank Transfer Payment Verification */}
+                {order.paymentInfo?.method === 'bank_transfer' && (
+                  <div className="bank-transfer-verification">
+                    
+                    <div className="mb-3">
+                      <strong>Payment Screenshot:</strong>
+                      {order.paymentInfo?.paymentScreenshot ? (
+                        <div className="mt-2">
+                          
+                          {order.paymentInfo.paymentScreenshot.path && (
+                            <div>
+                              <img 
+                                src={`${import.meta.env.VITE_API_BASE_URL}/${order.paymentInfo.paymentScreenshot.path}`}
+                                alt="Payment Screenshot"
+                                className="payment-screenshot"
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  maxHeight: '400px', 
+                                  border: '2px solid #ddd', 
+                                  borderRadius: '8px',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/${order.paymentInfo.paymentScreenshot.path}`, '_blank')}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'block';
+                                }}
+                              />
+                              <div style={{display: 'none', padding: '20px', background: '#f8d7da', color: '#721c24', border: '1px solid #f5c6cb', borderRadius: '4px'}}>
+                                Failed to load image from: {import.meta.env.VITE_API_BASE_URL}/{order.paymentInfo.paymentScreenshot.path}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="alert alert-warning mt-2">
+                          No payment screenshot found
+                        </div>
+                      )}
+                    </div>
+                    
+                    {order.paymentInfo?.status === 'verification_pending' && (
+                      <div className="verification-actions mb-3">
+                        <Alert variant="warning" className="mb-3">
+                          <strong>Action Required:</strong> Please verify the payment screenshot and approve or reject the payment.
+                        </Alert>
+                        <div className="d-flex gap-2">
+                          <Button 
+                            variant="success" 
+                            size="lg"
+                            onClick={() => handlePaymentVerification(true)}
+                          >
+                            <FaCheckCircle className="me-2" />
+                            Approve Payment
+                          </Button>
+                          <Button 
+                            variant="danger" 
+                            size="lg"
+                            onClick={() => handlePaymentVerification(false)}
+                          >
+                            <FaTimesCircle className="me-2" />
+                            Reject Payment
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {order.paymentInfo.verifiedAt && (
+                      <div className="mb-2">
+                        <strong>Verification Details:</strong>
+                        <div className="mt-1">
+                          <small className="text-muted">
+                            Verified on: {new Date(order.paymentInfo.verifiedAt).toLocaleString()}
+                            {order.paymentInfo.verifiedBy && (
+                              <><br />Verified by: {order.paymentInfo.verifiedBy.name || `Admin ID ${order.paymentInfo.verifiedBy}`}</>
+                            )}
+                          </small>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {order.paymentInfo.adminNotes && (
+                      <div className="mt-2">
+                        <strong>Admin Notes:</strong>
+                        <div className="mt-1 p-2 bg-light rounded">
+                          <small>{order.paymentInfo.adminNotes}</small>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card.Body>
+          </Card>
+
           {/* Order Summary */}
           <Card className="mb-4">
             <Card.Header>
@@ -351,23 +492,17 @@ const AdminOrderDetail = () => {
                   </tr>
                   <tr>
                     <td><strong>Payment Method:</strong></td>
-                    <td className="text-capitalize">{order.paymentInfo?.method || 'N/A'}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Payment ID:</strong></td>
-                    <td>
-                      {order.paymentInfo?.razorpayPaymentId ? (
-                        <code>{order.paymentInfo.razorpayPaymentId}</code>
-                      ) : (
-                        'N/A'
-                      )}
+                    <td className="text-capitalize">
+                      {order.paymentInfo?.method === 'bank_transfer' ? 'Bank Transfer' : 
+                       order.paymentInfo?.method === 'cod' ? 'Cash on Delivery' :
+                       order.paymentInfo?.method || 'N/A'}
                     </td>
                   </tr>
                   <tr className="border-top">
                     <td><strong>Total Amount:</strong></td>
                     <td>
                       <h5 className="text-success mb-0">
-                        <FaRupeeSign />{order.pricing?.total || order.total}
+                        <FaRupeeSign />{order.pricing?.total?.toFixed(2) || order.total || '0.00'}
                       </h5>
                     </td>
                   </tr>

@@ -14,8 +14,11 @@ import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Home from './components/Home/Home.jsx';
 import Products from './pages/Products/Products';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
+import BundlePage from './pages/Bundles/BundlePage';
+import GiftBoxPage from './pages/GiftBoxes/GiftBoxPage';
 import Cart from './pages/Cart/Cart';
 import Checkout from './pages/Checkout/Checkout';
+import BankDetails from './pages/BankDetails/BankDetails';
 import Categories from './components/Categories/Categories';
 import Orders from './pages/Orders/Orders';
 import OrderDetails from './pages/OrderDetails/OrderDetails';
@@ -39,6 +42,12 @@ import AdminProductForm from './pages/Admin/Products/AdminProductForm/AdminProdu
 import AdminProductDetail from './pages/Admin/Products/AdminProductDetail/AdminProductDetail';
 import AdminCategoryForm from './pages/Admin/Categories/AdminCategoryForm/AdminCategoryForm';
 import AdminCategoryDetail from './pages/Admin/Categories/AdminCategoryDetail/AdminCategoryDetail';
+import AdminBundles from './pages/Admin/AdminBundles';
+import AdminBundleForm from './pages/Admin/AdminBundleForm';
+import AdminBundleView from './pages/Admin/AdminBundleView';
+import AdminGiftBoxes from './pages/Admin/AdminGiftBoxes';
+import AdminGiftBoxForm from './pages/Admin/AdminGiftBoxForm';
+import AdminGiftBoxView from './pages/Admin/AdminGiftBoxView';
 
 
 
@@ -84,6 +93,14 @@ function App() {
                 <Route path="products/new" element={<AdminProductForm />} /> 
                 <Route path="products/:id/edit" element={<AdminProductForm />} /> 
                 <Route path="products/:productId" element={<AdminProductDetail />} />
+                <Route path="bundles" element={<AdminBundles />} />
+                <Route path="bundles/add" element={<AdminBundleForm />} />
+                <Route path="bundles/edit/:id" element={<AdminBundleForm />} />
+                <Route path="bundles/view/:id" element={<AdminBundleView />} />
+                <Route path="giftboxes" element={<AdminGiftBoxes />} />
+                <Route path="giftboxes/add" element={<AdminGiftBoxForm />} />
+                <Route path="giftboxes/edit/:id" element={<AdminGiftBoxForm />} />
+                <Route path="giftboxes/view/:id" element={<AdminGiftBoxView />} />
                 
                 {/* Redirect /admin to /admin/dashboard */}
                 <Route index element={<AdminDashboard />} />
@@ -99,6 +116,8 @@ function App() {
                       <Route path="/" element={<Home />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/products/:id" element={<ProductDetail />} />
+                      <Route path="/bundles" element={<BundlePage />} />
+                      <Route path="/giftboxes" element={<GiftBoxPage />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/products/:id/write-review" element={<WriteReview />} />
@@ -119,6 +138,11 @@ function App() {
                       <Route path="/checkout" element={
                         <ProtectedRoute>
                           <Checkout />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/bank-details" element={
+                        <ProtectedRoute>
+                          <BankDetails />
                         </ProtectedRoute>
                       } />
                       <Route path="/orders" element={

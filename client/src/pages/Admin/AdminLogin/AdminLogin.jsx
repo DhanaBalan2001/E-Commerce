@@ -48,7 +48,7 @@ const AdminLogin = () => {
 
     try {
       const response = await adminAuthService.login(formData.email, formData.password);
-      console.log('Login successful:', response);
+
       
       // Force navigation to dashboard
       window.location.href = '/admin/dashboard';

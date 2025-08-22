@@ -1,0 +1,51 @@
+.products-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+
+.products-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.products-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.products-scroll-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.products-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+@media (max-width: 768px) {
+  .products-scroll-container {
+    height: 150px !important;
+    touch-action: pan-y;
+  }
+  
+  .products-scroll-container.show-all {
+    height: auto !important;
+    max-height: 300px !important;
+  }
+  
+  /* Mobile form field improvements */
+  .form-control {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+  }
+  
+  .btn {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .btn .d-none.d-sm-inline {
+    display: none !important;
+  }
+}

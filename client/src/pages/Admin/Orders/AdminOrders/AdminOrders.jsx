@@ -30,6 +30,7 @@ import {
   FaClock
 } from 'react-icons/fa';
 import { useToast } from '../../../../context/ToastContext';
+import { useGlobalRefresh } from '../../../../hooks/useGlobalRefresh';
 import api from '../../../../services/api'; 
 import './adminorders.css';
 
@@ -94,6 +95,7 @@ const AdminOrders = () => {
   const [filters, setFilters] = useState({
     search: '',
     status: '',
+    paymentStatus: '',
     dateFrom: '',
     dateTo: '',
     page: 1,
@@ -102,10 +104,6 @@ const AdminOrders = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [filters]);
 
   const fetchOrders = async () => {
     try {
@@ -129,13 +127,55 @@ const AdminOrders = () => {
     }
   };
 
+  useEffect(() => {
+    fetchOrders();
+  }, [filters]);
+  
+  // Use global refresh hook
+  useGlobalRefresh(fetchOrders);
+
   const handleStatusUpdate = async (orderId, newStatus) => {
+
     try {
       await api.put(`/admin/orders/${orderId}/status`, { status: newStatus }, { timeout: 8000 });
       toast.success('Order status updated successfully');
       fetchOrders();
     } catch (error) {
       toast.error('Failed to update order status');
+    }
+  };
+
+  const [processingPayments, setProcessingPayments] = useState(new Set());
+
+  const handlePaymentVerification = async (orderId, approved) => {
+    if (processingPayments.has(orderId)) return;
+    
+    setProcessingPayments(prev => new Set(prev).add(orderId));
+    
+    try {
+      const adminNotes = approved ? 'Payment verified and approved' : 'Payment rejected';
+      await api.put(`/admin/orders/${orderId}/verify-payment`, {
+        approved,
+        adminNotes
+      }, { timeout: 5000 });
+      
+      toast.success(approved ? 'Payment approved successfully' : 'Payment rejected');
+      
+      // Update order locally for immediate UI feedback
+      setOrders(prev => prev.map(order => 
+        order._id === orderId 
+          ? { ...order, paymentInfo: { ...order.paymentInfo, status: approved ? 'completed' : 'failed' } }
+          : order
+      ));
+      
+    } catch (error) {
+      toast.error('Failed to verify payment');
+    } finally {
+      setProcessingPayments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
     }
   };
 
@@ -204,6 +244,7 @@ const AdminOrders = () => {
     setFilters({
       search: '',
       status: '',
+      paymentStatus: '',
       dateFrom: '',
       dateTo: '',
       page: 1,
@@ -280,6 +321,24 @@ const AdminOrders = () => {
                     { value: 'cancelled', label: 'Cancelled' }
                   ]}
                   placeholder="All Status"
+                >
+                </MobileDropdown>
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>Payment Status</Form.Label>
+                <MobileDropdown
+                  value={filters.paymentStatus}
+                  onChange={(value) => handleFilterChange('paymentStatus', value)}
+                  options={[
+                    { value: '', label: 'All Payments' },
+                    { value: 'verification_pending', label: 'Needs Verification' },
+                    { value: 'completed', label: 'Verified' },
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'failed', label: 'Failed' }
+                  ]}
+                  placeholder="All Payments"
                 >
                 </MobileDropdown>
               </Form.Group>
@@ -403,11 +462,39 @@ const AdminOrders = () => {
                       {getStatusBadge(order.status)}
                     </td>
                     <td>
-                      <Badge 
-                        bg={order.paymentInfo?.status === 'completed' ? 'success' : 'warning'}
-                      >
-                        {order.paymentInfo?.status || 'pending'}
-                      </Badge>
+                      <div className="d-flex flex-column gap-1">
+                        <Badge 
+                          bg={order.paymentInfo?.status === 'completed' ? 'success' : 
+                              order.paymentInfo?.status === 'verification_pending' ? 'warning' : 'secondary'}
+                        >
+                          {order.paymentInfo?.status === 'verification_pending' ? 'Needs Verification' :
+                           order.paymentInfo?.status === 'completed' ? 'Verified' :
+                           order.paymentInfo?.status || 'pending'}
+                        </Badge>
+                        {order.paymentInfo?.method === 'bank_transfer' && 
+                         order.paymentInfo?.status === 'verification_pending' && (
+                          <div className="d-flex gap-1">
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => handlePaymentVerification(order._id, true)}
+                              disabled={processingPayments.has(order._id)}
+                              title="Approve Payment"
+                            >
+                              {processingPayments.has(order._id) ? <Spinner size="sm" /> : '✓'}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handlePaymentVerification(order._id, false)}
+                              disabled={processingPayments.has(order._id)}
+                              title="Reject Payment"
+                            >
+                              {processingPayments.has(order._id) ? <Spinner size="sm" /> : '✗'}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className="action-buttons">
@@ -474,11 +561,35 @@ const AdminOrders = () => {
                       <div className="mobile-field-label">Payment</div>
                       <div className="mobile-field-value">
                         <Badge 
-                          bg={order.paymentInfo?.status === 'completed' ? 'success' : 'warning'}
+                          bg={order.paymentInfo?.status === 'completed' ? 'success' : 
+                              order.paymentInfo?.status === 'verification_pending' ? 'warning' : 'secondary'}
                           className="badge"
                         >
-                          {order.paymentInfo?.status || 'pending'}
+                          {order.paymentInfo?.status === 'verification_pending' ? 'Needs Verification' :
+                           order.paymentInfo?.status === 'completed' ? 'Verified' :
+                           order.paymentInfo?.status || 'pending'}
                         </Badge>
+                        {order.paymentInfo?.method === 'bank_transfer' && 
+                         order.paymentInfo?.status === 'verification_pending' && (
+                          <div className="d-flex gap-1 mt-1">
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => handlePaymentVerification(order._id, true)}
+                              disabled={processingPayments.has(order._id)}
+                            >
+                              {processingPayments.has(order._id) ? <Spinner size="sm" /> : 'Approve'}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handlePaymentVerification(order._id, false)}
+                              disabled={processingPayments.has(order._id)}
+                            >
+                              {processingPayments.has(order._id) ? <Spinner size="sm" /> : 'Reject'}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

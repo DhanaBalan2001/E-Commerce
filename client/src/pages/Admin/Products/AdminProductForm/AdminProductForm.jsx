@@ -151,9 +151,17 @@ const AdminProductForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let processedValue = value;
+    
+    if (type === 'number') {
+      if (name === 'price' || name === 'weight' || name === 'stock' || name === 'discount') {
+        processedValue = Math.max(0, parseFloat(value) || 0);
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : processedValue
     }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
 
@@ -231,14 +239,7 @@ const AdminProductForm = () => {
       // Send new image files
       imageFiles.forEach(file => submitData.append('images', file));
       
-      // Debug: Log what we're sending
-      console.log('Sending data:', {
-        existingImages: existingImages.length,
-        newImages: imageFiles.length,
-        totalImagesInForm: formData.images.length,
-        existingImageUrls: existingImages.map(img => img.url),
-        newImageNames: imageFiles.map(file => file.name)
-      });
+
 
       // Scroll to top immediately
       window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -1,42 +1,48 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { productService } from '../services';
 import { useApiWithCache } from './useApiWithCache';
 import { useMutation } from './useApi';
 
-export const useProducts = () => {
+export const useProducts = (filters = {}) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchProducts = useCallback(async () => {
+  // Memoize filters to prevent unnecessary re-renders
+  const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
+
+  const fetchProducts = useCallback(async (force = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching products...');
       
-      const result = await productService.getProducts();
-      console.log('Products loaded:', result);
+      // Add cache busting for forced refresh
+      const filtersWithCache = force ? { ...memoizedFilters, _t: Date.now() } : memoizedFilters;
+      const result = await productService.getProducts(filtersWithCache);
       
       setData(result);
     } catch (err) {
-      console.error('Products error:', err);
       setError(err.message || 'Failed to load products');
-      // Set fallback data
       setData({ products: [], total: 0, totalPages: 1, currentPage: 1 });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [memoizedFilters]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    // Reduce debounce time for faster response
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, memoizedFilters.search ? 200 : 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchProducts, memoizedFilters.search]);
 
   return {
     data,
     loading,
     error,
-    refetch: fetchProducts
+    refetch: () => fetchProducts(true)
   };
 };
 
@@ -78,7 +84,6 @@ export const useFeaturedProducts = () => {
         const result = await productService.getFeaturedProducts();
         setData(result);
       } catch (err) {
-        console.error('Featured products error:', err);
         setError(err.message);
         setData({ products: [] }); // Fallback
       } finally {
@@ -124,9 +129,8 @@ export const useProductSearch = () => {
   useEffect(() => {
     if (searchQuery.trim()) {
       const timeoutId = setTimeout(() => {
-        // For search, we might want to trigger a re-fetch
-        // You can add a refetch method to your useApiWithCache if needed
-      }, 500); // 500ms debounce
+        // Debounced search execution
+      }, 300); // 300ms debounce
 
       return () => clearTimeout(timeoutId);
     }
@@ -148,15 +152,53 @@ export const useProductReview = () => {
 };
 
 export const useCreateProduct = () => {
-  return useMutation(productService.createProduct);
+  return useMutation(productService.createProduct, {
+    onSuccess: (data) => {
+      // Dispatch events for product creation
+      window.dispatchEvent(new CustomEvent('productCreated', { detail: data }));
+      
+      // If it's a featured product, update home page
+      if (data?.product?.isFeatured) {
+        window.dispatchEvent(new CustomEvent('featuredProductsUpdate'));
+      }
+    }
+  });
 };
 
 export const useUpdateProduct = () => {
-  return useMutation(productService.updateProduct);
+  return useMutation(productService.updateProduct, {
+    onSuccess: (data) => {
+      // Dispatch events for product update
+      window.dispatchEvent(new CustomEvent('productUpdated', { detail: data }));
+      
+      // If it's a featured product, update home page
+      if (data?.product?.isFeatured) {
+        window.dispatchEvent(new CustomEvent('featuredProductsUpdate'));
+      }
+    }
+  });
 };
 
 export const useDeleteProduct = () => {
-  return useMutation(productService.deleteProduct);
+  const mutation = useMutation(productService.deleteProduct, {
+    onSuccess: (data) => {
+      // Dispatch events for product deletion
+      window.dispatchEvent(new CustomEvent('productDeleted', { detail: data }));
+      window.dispatchEvent(new CustomEvent('featuredProductsUpdate'));
+    }
+  });
+  
+  return {
+    ...mutation,
+    mutateAsync: async (variables) => {
+      try {
+        const result = await mutation.mutateAsync(variables);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    }
+  };
 };
 
 export const useDeleteProductImage = () => {

@@ -1,0 +1,121 @@
+.bank-details-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding-top: 80px;
+}
+
+.page-header h2 {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.bank-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.bank-detail-item:last-child {
+  border-bottom: none;
+}
+
+.bank-detail-item label {
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+  min-width: 120px;
+}
+
+.detail-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.detail-value span {
+  font-family: 'Courier New', monospace;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.account-number {
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.detail-value button {
+  min-width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot-preview {
+  text-align: center;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.payment-steps {
+  padding-left: 20px;
+}
+
+.payment-steps li {
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.qr-code-container {
+  padding: 20px;
+}
+
+.qr-code-image {
+  max-width: 200px;
+  height: auto;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sticky-top {
+  top: 20px;
+}
+
+@media (max-width: 768px) {
+  .qr-code-image {
+    max-width: 150px;
+  }
+  .bank-detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .detail-value {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .detail-value span {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .sticky-top {
+    position: relative !important;
+    top: auto !important;
+  }
+}

@@ -417,8 +417,8 @@ const AdminSettings = () => {
       fetchAdminProfile(); // Refresh data
     } catch (error) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast.error(error.response?.data?.message || 'Failed to update profile');
       console.error('Error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -454,8 +454,8 @@ const AdminSettings = () => {
       });
     } catch (error) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast.error(error.response?.data?.message || 'Failed to change password');
       console.error('Error:', error);
+      toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }

@@ -11,6 +11,7 @@ import {
 import { useProducts, useDeleteProduct } from '../../../../hooks/useProducts';
 import { useCategories } from '../../../../hooks/useCategories';
 import { useToast } from '../../../../context/ToastContext';
+import { useGlobalRefresh } from '../../../../hooks/useGlobalRefresh';
 import { getImageUrl } from '../../../../utils/imageUrl';
 import './adminproducts.css';
 
@@ -82,12 +83,16 @@ const AdminProducts = () => {
       refresh: refresh || null
     };
   });
+  const [searchInput, setSearchInput] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const { data: productsData, loading, error, refetch } = useProducts();
+  const { data: productsData, loading, error, refetch } = useProducts(filters);
+  
+  // Use global refresh hook
+  useGlobalRefresh(refetch);
   const { data: categoriesData } = useCategories();
   const deleteProduct = useDeleteProduct();
   const toast = useToast();
@@ -98,22 +103,11 @@ const AdminProducts = () => {
   const total = productsData?.total || 0;
   const categories = categoriesData?.categories || [];
 
-  useEffect(() => {
-    refetch();
-  }, [filters, refetch]);
-
-  // Force re-render when products data changes
-  const [imageKey, setImageKey] = useState(Date.now());
-  useEffect(() => {
-    if (productsData?.products) {
-      setImageKey(Date.now());
-    }
-  }, [productsData?.products]);
+  // Single stable image key to prevent flickering
+  const [imageKey] = useState(Date.now());
 
   useEffect(() => {
     if (filters.refresh) {
-      refetch();
-      setImageKey(Date.now());
       // Remove refresh param from URL after refresh
       const url = new URL(window.location);
       url.searchParams.delete('refresh');
@@ -121,12 +115,7 @@ const AdminProducts = () => {
       // Clear refresh from filters to avoid repeated refresh
       setFilters(prev => ({ ...prev, refresh: null }));
     }
-  }, [filters, refetch, setFilters]);
-
-  // Force image refresh on page load/reload
-  useEffect(() => {
-    setImageKey(Date.now());
-  }, []);
+  }, [filters.refresh]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -140,11 +129,26 @@ const AdminProducts = () => {
     }
   };
 
+  const handleSearch = () => {
+    setFilters(prev => ({
+      ...prev,
+      search: searchInput,
+      page: 1
+    }));
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   const handlePageChange = (page) => {
     setFilters(prev => ({ ...prev, page }));
   };
 
   const clearFilters = () => {
+    setSearchInput('');
     setFilters({
       page: 1,
       limit: 10,
@@ -164,13 +168,12 @@ const AdminProducts = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteProduct.mutate(productToDelete._id);
+      await deleteProduct.mutateAsync(productToDelete._id);
       toast.success('Product deleted successfully!');
       setShowDeleteModal(false);
       setProductToDelete(null);
-      // Force refresh
-      await refetch();
-      setImageKey(Date.now());
+      // Immediate local update
+      refetch();
     } catch (error) {
       toast.error(error.message || 'Failed to delete product');
     }
@@ -209,12 +212,24 @@ const AdminProducts = () => {
         <div className="page-header-content">
           <div className="page-header-text">
             <h1 className="page-title1">Products Management</h1>
-
           </div>
-          <Link to="/admin/products/new" className="add-product-btn">
-            <FaPlus />
-            <span>Add Product</span>
-          </Link>
+          <div className="d-flex gap-2">
+            <Button 
+              variant="outline-primary" 
+              onClick={() => {
+                refetch();
+                toast.success('Products refreshed!');
+              }}
+              size="sm"
+              disabled={loading}
+            >
+              {loading ? <Spinner size="sm" /> : '🔄'} Refresh
+            </Button>
+            <Link to="/admin/products/new" className="add-product-btn">
+              <FaPlus />
+              <span>Add Product</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -234,14 +249,21 @@ const AdminProducts = () => {
             <Col md={3} className="mb-3">
               <Form.Group>
                 <Form.Label>Search Products</Form.Label>
-                <div className="position-relative">
+                <div className="search-input-group">
                   <Form.Control
                     type="text"
                     placeholder="Search by name..."
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
                   />
-                  <FaSearch className="search-icon" />
+                  <Button 
+                    variant="primary" 
+                    onClick={handleSearch}
+                    className="search-btn"
+                  >
+                    <FaSearch />
+                  </Button>
                 </div>
               </Form.Group>
             </Col>
@@ -360,9 +382,10 @@ const AdminProducts = () => {
                   <tr key={product._id}>
                     <td>
                       <img
-                        src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}?v=${imageKey}` : '/placeholder-image.jpg'}
+                        src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/placeholder-image.jpg'}
                         alt={product.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
+                        loading="lazy"
                       />
                     </td>
                     <td>
@@ -442,9 +465,10 @@ const AdminProducts = () => {
                 <div key={product._id} className="mobile-product-card">
                   <div className="mobile-card-header">
                     <img
-                      src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}?v=${imageKey}` : '/placeholder-image.jpg'}
+                      src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/placeholder-image.jpg'}
                       alt={product.name}
                       style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', marginRight: '12px' }}
+                      loading="lazy"
                     />
                     <div style={{ flex: 1 }}>
                       <div className="mobile-card-title">{product.name}</div>

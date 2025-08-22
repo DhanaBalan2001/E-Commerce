@@ -762,6 +762,269 @@ button:focus {
   margin: 0;
 }
 
+/* Horizontal Scrollable Ads Section */
+.ads-section {
+  background: #FFF9E3;
+  padding: 2rem 0;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.ads-container {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.ads-scroll {
+  display: flex;
+  animation: scroll-ads 20s linear infinite;
+  gap: 2rem;
+  width: calc(200% + 4rem);
+}
+
+.ad-item {
+  flex: 0 0 300px;
+  height: 120px;
+  background: linear-gradient(135deg, #ff6b35, #ffa726);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  box-shadow: 0 5px 20px rgba(255, 107, 53, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.ad-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-right: 1rem;
+  background: white;
+  padding: 5px;
+}
+
+.ad-content {
+  color: white;
+  flex: 1;
+}
+
+.ad-content h5 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.ad-content p {
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+@keyframes scroll-ads {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 768px) {
+  .ad-item {
+    flex: 0 0 250px;
+    height: 100px;
+    padding: 0.8rem;
+  }
+  
+  .ad-item img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .ad-content h5 {
+    font-size: 0.9rem;
+  }
+  
+  .ad-content p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .ad-item {
+    flex: 0 0 200px;
+    height: 80px;
+    padding: 0.6rem;
+  }
+  
+  .ad-item img {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .ad-content h5 {
+    font-size: 0.8rem;
+  }
+  
+  .ad-content p {
+    font-size: 0.7rem;
+  }
+}
+
+.ticker-ads-section {
+  background: linear-gradient(45deg, #ff6b35, #ffa726);
+  padding: 0.5rem 0;
+  margin-top: -6rem;
+  overflow: hidden;
+  /* white-space: nowrap; */
+}
+
+.ticker-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.ticker-content {
+  display: inline-block;
+  animation: ticker-scroll 15s linear infinite;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  /* white-space: nowrap; */
+  min-width: 100%;
+}
+
+.ticker-item {
+  margin-right: 3rem;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translate3d(100%, 0, 0); }
+  100% { transform: translate3d(-100%, 0, 0); }
+}
+
+@media (max-width: 768px) {
+  .ticker-content {
+    font-size: 0.8rem;
+  }
+  .ticker-item {
+    margin-right: 2rem;
+  }
+}
+
+.gsap-ads-section-old {
+  background: #FFF9E3;
+  padding: 0.5rem 0;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  margin-top: -6rem;
+}
+
+.gsap-ads-container {
+  width: 100%;
+  height: 50px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gsap-ad-card {
+  position: absolute;
+  width: 200px;
+  height: 40px;
+  background: linear-gradient(135deg, #ff6b35, #ffa726);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  overflow: hidden;
+}
+
+.ad-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.ad-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent);
+  animation: particles-float 4s linear infinite;
+}
+
+
+
+.gsap-ad-content {
+  color: white;
+  flex: 1;
+  position: relative;
+}
+
+.gsap-ad-content h4 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.gsap-ad-content p {
+  display: none;
+}
+
+.ad-sparkle {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  font-size: 0.8rem;
+  animation: sparkle-rotate 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes particles-float {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-20px); }
+}
+
+@keyframes sparkle-rotate {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@media (max-width: 768px) {
+  .gsap-ads-container {
+    height: 40px;
+  }
+  .gsap-ad-card {
+    width: 150px;
+    height: 30px;
+    padding: 0.3rem;
+  }
+  .gsap-ad-content h4 {
+    font-size: 0.6rem;
+  }
+  .ad-sparkle {
+    font-size: 0.6rem;
+  }
+}
+
 /* Categories Section */
 .categories-section {
   background: #FFF9E3;
@@ -1591,6 +1854,14 @@ button:focus {
 .footer-widget-title {
   /* font-size: 1.2rem; */
   font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: rgb(13, 10, 10);
+  font-family: 'Mukta', sans-serif;
+}
+
+.footer-widget-titles {
+  /* font-size: 1.2rem; */
+  font-weight: 1000;
   margin-bottom: 1.5rem;
   color: rgb(13, 10, 10);
   font-family: 'Mukta', sans-serif;
@@ -2717,4 +2988,169 @@ button:focus {
   color: #666;
 }
 
+/* Payment Section Styles */
+.payment-section {
+  position: relative;
+  z-index: 3;
+}
 
+.payment-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.qr-code-section {
+  flex-shrink: 0;
+}
+
+.qr-code-image {
+  width: 200px !important;
+  height: 200px !important;
+  object-fit: contain !important;
+  border: 3px solid #ff6b35;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+  transition: all 0.3s ease;
+  background: white;
+  padding: 4px;
+}
+
+.qr-code-image:hover {
+  transform: scale(1.05);
+}
+
+.bank-details {
+  width: 100%;
+  padding: 1rem;
+  text-align: center;
+}
+
+.bank-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ff6b35;
+  margin-bottom: 0.75rem;
+  font-family: 'Mukta', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bank-info p {
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+  color: white;
+  line-height: 1.4;
+}
+
+.bank-info strong {
+  color: black;
+  font-weight: 700;
+}
+
+/* Mobile responsive for payment section */
+@media (max-width: 768px) {
+  .payment-row {
+    gap: 0.75rem;
+  }
+  
+  .qr-code-image {
+    width: 150px !important;
+    height: 150px !important;
+  }
+  
+  .bank-details {
+    padding: 0.75rem;
+  }
+  
+  .bank-info p {
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .bank-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .payment-row {
+    gap: 0.5rem;
+  }
+  
+  .qr-code-image {
+    width: 130px !important;
+    height: 130px !important;
+  }
+  
+  .bank-details {
+    padding: 0.5rem;
+  }
+  
+  .bank-info p {
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  .bank-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+  }
+}
+
+
+
+/* Mobile Banner v2 - Updated */
+@media screen and (max-width: 768px) {
+  .mobile-promo-banner {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: linear-gradient(45deg, #ff6b35, #ffa726) !important;
+    color: white !important;
+    padding: 8px 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-height: 35px !important;
+    z-index: 999999 !important;
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    animation: mobile-scroll 12s linear infinite !important;
+    transform: translateZ(0) !important;
+  }
+}
+
+
+@keyframes mobile-scroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Mobile Banner Styles */
+.mobile-banner {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-banner {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-banner {
+    display: none !important;
+  }
+}

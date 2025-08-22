@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Verification Required - Sindhu Crackers</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #ff6b35; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .bank-details { background: white; padding: 15px; border-left: 4px solid #ff6b35; margin: 15px 0; }
+        .footer { text-align: center; padding: 20px; color: #666; }
+        .status-badge { background: #ffc107; color: #000; padding: 5px 10px; border-radius: 15px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎆 Order Confirmation</h1>
+            <p>Your order has been received!</p>
+        </div>
+        
+        <div class="content">
+            <h2>Order #{{orderNumber}}</h2>
+            <p><span class="status-badge">Payment Verification Pending</span></p>
+            
+            <p>Dear {{customerName}},</p>
+            
+            <p>Thank you for your order! We have received your payment screenshot and it is currently under verification.</p>
+            
+            <div class="bank-details">
+                <h3>What happens next?</h3>
+                <ul>
+                    <li>Our team will verify your payment within 24 hours</li>
+                    <li>Once verified, your order will be confirmed and processed</li>
+                    <li>You'll receive another email confirmation once payment is approved</li>
+                    <li>Your order will then be prepared for shipping</li>
+                </ul>
+            </div>
+            
+            <h3>Order Summary:</h3>
+            <p><strong>Total Amount:</strong> ₹{{totalAmount}}</p>
+            <p><strong>Payment Method:</strong> Bank Transfer</p>
+            <p><strong>Order Date:</strong> {{orderDate}}</p>
+            
+            <p>If you have any questions, please contact us at support@sindhucrackers.com</p>
+        </div>
+        
+        <div class="footer">
+            <p>Thank you for choosing Sindhu Crackers!</p>
+            <p>🎆 Making your celebrations spectacular since 2010 🎆</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -66,7 +66,7 @@ const appReducer = (state, action) => {
 let lastCartFetchTime = 0;
 const CART_FETCH_INTERVAL = 3000; // 3 seconds
 
-export function AppProvider({ children }) {
+const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   const loadCartCount = async () => {
@@ -83,7 +83,6 @@ export function AppProvider({ children }) {
       const cartData = await cartService.getCart();
       dispatch({ type: 'SET_CART_COUNT', payload: cartData.itemCount || 0 });
     } catch (error) {
-      console.error('Failed to load cart count:', error);
       dispatch({ type: 'SET_CART_COUNT', payload: 0 });
     }
   };
@@ -103,7 +102,6 @@ export function AppProvider({ children }) {
           dispatch({ type: 'SET_USER', payload: null });
         }
       } catch (error) {
-        console.error('App initialization error:', error);
         dispatch({ type: 'SET_ERROR', payload: 'Failed to initialize app' });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -118,20 +116,16 @@ export function AppProvider({ children }) {
       dispatch({ type: 'SET_USER', payload: userData });
       await loadCartCount();
     } catch (error) {
-      console.error('Login error:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to complete login' });
     }
   };
 
   const logout = (reason = 'manual') => {
     try {
-      if (reason === 'rateLimit') {
-        console.warn('Automatic logout due to rate limit exceeded');
-      }
+
       authService.logout();
       dispatch({ type: 'LOGOUT' });
     } catch (error) {
-      console.error('Logout error:', error);
       dispatch({ type: 'LOGOUT' });
     }
   };
@@ -143,7 +137,6 @@ export function AppProvider({ children }) {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       dispatch({ type: 'UPDATE_USER', payload: userData });
     } catch (error) {
-      console.error('Update user error:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update user data' });
     }
   };
@@ -162,7 +155,6 @@ export function AppProvider({ children }) {
         dispatch({ type: 'SET_USER', payload: response.user });
       }
     } catch (error) {
-      console.error('Refresh user error:', error);
       if (error.status === 401) {
         logout();
       }
@@ -201,9 +193,11 @@ export function AppProvider({ children }) {
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
+};
 
-export function useAppContext() {
+export { AppProvider, useAppContext, useAuth, useCart };
+
+const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('useAppContext must be used within AppProvider');
@@ -211,7 +205,7 @@ export function useAppContext() {
   return context;
 }
 
-export function useAuth() {
+const useAuth = () => {
   const { isAuthenticated, user, login, logout, checkAuth } = useAppContext();
   return {
     isAuthenticated,
@@ -223,7 +217,7 @@ export function useAuth() {
   };
 }
 
-export function useCart() {
+const useCart = () => {
   const { cartCount, updateCartCount, loadCartCount } = useAppContext();
   return {
     cartCount,

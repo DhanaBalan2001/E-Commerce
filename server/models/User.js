@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema({
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product',
-            required: true
+            required: false
         },
         quantity: {
             type: Number,
@@ -55,6 +55,18 @@ const userSchema = new mongoose.Schema({
         addedAt: {
             type: Date,
             default: Date.now
+        },
+        bundleInfo: {
+            bundleId: String,
+            bundleName: String,
+            bundlePrice: Number,
+            isBundle: Boolean
+        },
+        giftBoxInfo: {
+            giftBoxId: String,
+            giftBoxName: String,
+            giftBoxPrice: Number,
+            isGiftBox: Boolean
         }
     }],
     wishlist: [{

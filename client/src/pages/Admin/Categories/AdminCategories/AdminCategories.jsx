@@ -15,6 +15,7 @@ import {
   useDeleteCategory 
 } from '../../../../hooks/useCategories';
 import { useToast } from '../../../../context/ToastContext';
+import { useGlobalRefresh } from '../../../../hooks/useGlobalRefresh';
 import './admincategories.css';
 
 const MobileDropdown = ({ value, onChange, options, placeholder }) => {
@@ -85,15 +86,43 @@ const AdminCategories = () => {
     status: '',
     sortBy: 'createdAt-desc'
   });
+  const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const { data: categoriesData, loading, error, refetch } = useCategories();
-  const createCategory = useCreateCategory(() => refetch());
-  const updateCategory = useUpdateCategory(() => refetch());
-  const deleteCategory = useDeleteCategory(() => refetch());
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  
+  // Force refresh function
+  const forceRefresh = () => {
+    setImageRefreshKey(Date.now());
+    refetch();
+  };
+
+
+
+  // Force refresh on page load and check for refresh flag
+  React.useEffect(() => {
+    const needsRefresh = localStorage.getItem('categoryListNeedsRefresh');
+    if (needsRefresh) {
+      localStorage.removeItem('categoryListNeedsRefresh');
+    }
+    // Always force refresh on mount
+    setTimeout(() => forceRefresh(), 100);
+  }, []);
+
+
+
+
+
+  // Use global refresh hook
+  useGlobalRefresh(forceRefresh);
+
+
   const toast = useToast();
 
   const categories = categoriesData?.categories || [];
@@ -177,14 +206,35 @@ const AdminCategories = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteCategory.mutate(categoryToDelete._id);
-      toast.success('Category deleted successfully!');
+      await deleteCategory.mutateAsync(categoryToDelete._id);
+      
+      // Close modal and clear state
       setShowDeleteModal(false);
       setCategoryToDelete(null);
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Show success message
+      toast.success('Category deleted successfully!');
+      
+      // Force immediate refresh
+      forceRefresh();
+      
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete category';
-      toast.error(errorMessage);
+      // Close modal and clear state
       setShowDeleteModal(false);
+      setCategoryToDelete(null);
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Show error message
+      const errorMessage = error?.message || 'Failed to delete category';
+      toast.error(errorMessage);
+      
+      // Force refresh to update the list
+      forceRefresh();
     }
   };
 
@@ -206,10 +256,32 @@ const AdminCategories = () => {
             <h1 className="page-title1">Categories Management</h1>
 
           </div>
-          <Link to="/admin/categories/new" className="add-category-btn">
-            <FaPlus />
-            <span>Add Category</span>
-          </Link>
+          <div className="d-flex gap-2">
+            <Button 
+              variant="outline-primary" 
+              onClick={() => {
+                forceRefresh();
+                toast.success('Categories refreshed!');
+              }}
+              size="sm"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Spinner size="sm" className="me-1" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  🔄 Refresh
+                </>
+              )}
+            </Button>
+            <Link to="/admin/categories/new" className="add-category-btn">
+              <FaPlus />
+              <span>Add Category</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -316,9 +388,13 @@ const AdminCategories = () => {
                   <tr key={category._id}>
                     <td>
                       <img
-                        src={category.image ? `${import.meta.env.VITE_API_BASE_URL}${category.image}` : '/placeholder-image.jpg'}
+                        src={category.image ? `${import.meta.env.VITE_API_BASE_URL}${category.image}?v=${imageRefreshKey}&t=${Date.now()}&updated=${category.updatedAt || category.createdAt}` : '/placeholder-image.jpg'}
                         alt={category.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
+                        key={`${category._id}-${imageRefreshKey}-${category.updatedAt || category.createdAt}`}
+                        onError={(e) => {
+                          e.target.src = '/placeholder-image.jpg';
+                        }}
                       />
                     </td>
                     <td>

@@ -2,9 +2,9 @@ import api from './api';
 
 export const categoryService = {
   // Get all categories
-  getCategories: async () => {
+  getCategories: async (cacheBuster = '') => {
     try {
-      const response = await api.get('/categories');
+      const response = await api.get(`/categories${cacheBuster}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch categories' };

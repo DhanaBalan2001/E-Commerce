@@ -28,7 +28,7 @@ export const useApi = (apiFunction, dependencies = [], options = {}) => {
         () => apiFunction(...args),
         {
           maxRetries: 3,
-          onProgress: (status) => console.log('Request status:', status)
+          onProgress: () => {}
         }
       );
       
@@ -81,7 +81,7 @@ export const useMutation = (apiFunction, options = {}) => {
         () => apiFunction(...args),
         {
           maxRetries: 2, // Fewer retries for mutations
-          onProgress: (status) => console.log('Mutation status:', status)
+          onProgress: () => {}
         }
       );
       
@@ -105,5 +105,12 @@ export const useMutation = (apiFunction, options = {}) => {
     setLoading(false);
   }, []);
 
-  return { data, loading, error, mutate, reset };
+  return { 
+    data, 
+    loading, 
+    error, 
+    mutate, 
+    mutateAsync: mutate, // Alias for async/await usage
+    reset 
+  };
 };
