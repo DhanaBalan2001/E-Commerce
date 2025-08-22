@@ -369,7 +369,7 @@ const Home = () => {
               display: 'inline-block',
               animation: 'scroll 20s linear infinite'
             }}>
-              🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified
+              🎆 Diwali Special 75% OFF • 🚀 New Arrivals 2025 • 🎁 Complimentary Gifts on Orders Above ₹3000 • 📦 Minimum Order Above ₹3000 • 🛡️ 100% Safe & Certified • 🕒 365 Days of Exciting Offers • 🏬 Shop Open All Day • 🎆 Diwali Special 75% OFF • 🚀 New Arrivals 2025 • 🎁 Complimentary Gifts on Orders Above ₹3000 • 📦 Minimum Order Above ₹3000 • 🛡️ 100% Safe & Certified • 🕒 365 Days of Exciting Offers • 🏬 Shop Open All Day •
             </div>
           </div>
         )}
@@ -409,7 +409,7 @@ const Home = () => {
               display: 'inline-block',
               animation: 'scroll 20s linear infinite'
             }}>
-              🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎉 Limited Time Offer • ⚡ Fast Delivery • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified • 🎆 Diwali Special 50% OFF • 🚀 New Arrivals 2025 • 🚚 Free Delivery Above ₹1000 • 🛡️ 100% Safe & Certified
+              🎆 Diwali Special 75% OFF • 🚀 New Arrivals 2025 • 🎁 Complimentary Gifts on Orders Above ₹3000 • 📦 Minimum Order Above ₹3000 • 🛡️ 100% Safe & Certified • 🕒 365 Days of Exciting Offers • 🏬 Shop Open All Day • 🎆 Diwali Special 75% OFF • 🚀 New Arrivals 2025 • 🎁 Complimentary Gifts on Orders Above ₹3000 • 📦 Minimum Order Above ₹3000 • 🛡️ 100% Safe & Certified • 🕒 365 Days of Exciting Offers • 🏬 Shop Open All Day •
             </div>
           </div>
         )}
@@ -1025,7 +1025,7 @@ const Home = () => {
               style={{width: '200px', height: '200px', objectFit: 'contain'}}
             />
             <p className="mt-2 mb-0">
-              <strong>Google Pay/Paytm/PhonePe : 70</strong>
+              <strong>Google Pay/Paytm/PhonePe : 7094525228</strong>
             </p>
           </div>
           <div className="upi-details">
