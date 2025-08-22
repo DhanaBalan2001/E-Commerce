@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /categories
+Allow: /about
+Allow: /contact
+
+Disallow: /admin
+Disallow: /api
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /profile
+
+Sitemap: https://sindhucrackers.com/sitemap.xml
