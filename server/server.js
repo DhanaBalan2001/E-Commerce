@@ -72,6 +72,7 @@ function startServer() {
         'http://localhost:5173',
         'http://localhost:3000',
         'https://sindhucrackers.com',
+        'https://www.sindhucrackers.com',
         'https://crackershop.netlify.app',
         process.env.FRONTEND_URL
       ].filter(Boolean),
@@ -103,6 +104,7 @@ function startServer() {
       'http://localhost:5173',
       'http://localhost:3000', 
       'https://sindhucrackers.com',
+      'https://www.sindhucrackers.com',
       'https://crackershop.netlify.app',
       process.env.FRONTEND_URL
     ].filter(Boolean),
