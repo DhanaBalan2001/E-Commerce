@@ -10,7 +10,6 @@ import multer from 'multer';
 import cluster from 'cluster';
 import os from 'os';
 
-
 // Routes
 import authRoutes from './routes/auth.js';
 import adminAuthRoutes from './routes/admin.js';

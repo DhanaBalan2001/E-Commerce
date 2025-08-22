@@ -74,7 +74,6 @@ const Home = () => {
   };
 
 
-
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
