@@ -5,11 +5,7 @@ export default defineConfig(({ mode }) => {
   const API_BASE = process.env.VITE_API_BASE_URL;
 
   return {
-    plugins: [react({
-      babel: {
-        plugins: mode === 'production' ? [['babel-plugin-react-remove-properties', { properties: ['data-testid'] }]] : []
-      }
-    })],
+    plugins: [react()],
     define: { global: 'globalThis' },
     build: {
       outDir: 'dist',
