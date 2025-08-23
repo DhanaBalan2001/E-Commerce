@@ -304,46 +304,47 @@ app.use((req, res) => {
     });
   });
 
-  // Start server with enhanced error handling
-  const startServerInstance = () => {
-    server.listen(port, () => {
-      console.log(`🚀 Worker ${process.pid} running on port ${port}`);
-      console.log(`👍 Health check: http://localhost:${port}/api/health`);
-
-      mongoose.connect(process.env.MONGODB, {
-        maxPoolSize: 50,
-        minPoolSize: 5,
-        maxIdleTimeMS: 30000,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000
-      })
-        .then(async () => {
-          console.log('✅ MongoDB Connected with optimized pool');
-          
-          try {
-            await mongoose.connection.db.collection('users').dropIndex('phoneNumber_1');
-          } catch (error) {
-            // Index not found or already dropped
-          }
-        })
-        .catch((err) => {
-          console.error('❌ MongoDB connection error:', err);
-          process.exit(1);
+  // Connect to MongoDB first
+  mongoose.connect(process.env.MONGODB, {
+    maxPoolSize: 50,
+    minPoolSize: 5,
+    maxIdleTimeMS: 30000,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000
+  })
+    .then(async () => {
+      console.log('✅ MongoDB Connected with optimized pool');
+      
+      // Test Cloudinary connection
+      try {
+        const { v2: cloudinary } = await import('cloudinary');
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
         });
-    })
-    .on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.log(`Port ${port} is busy, trying port ${port + 1}`);
-        port = port + 1;
-        setTimeout(startServerInstance, 1000);
-      } else {
-        console.error('Server error:', err);
-        process.exit(1);
+        await cloudinary.api.ping();
+        console.log('✅ Cloudinary Connected');
+      } catch (error) {
+        console.log('❌ Cloudinary Connection Failed:', error.message);
       }
+      
+      try {
+        await mongoose.connection.db.collection('users').dropIndex('phoneNumber_1');
+      } catch (error) {
+        // Index not found or already dropped
+      }
+      
+      // Start server after DB connection
+      server.listen(port, () => {
+        console.log(`🚀 Server running on port ${port}`);
+        console.log(`👍 Health check: http://localhost:${port}/api/health`);
+      });
+    })
+    .catch((err) => {
+      console.error('❌ MongoDB connection error:', err);
+      process.exit(1);
     });
-  };
-
-  startServerInstance();
 
   // Error handling
   process.on('unhandledRejection', (err) => {

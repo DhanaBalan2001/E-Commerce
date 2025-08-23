@@ -556,25 +556,11 @@ const Home = () => {
                   <Card className="category-card h-100">
                     <Card.Body className="text-center">
                       <div className="category-icon">
-                        {category.image ? (
-                          <img 
-                            src={`${import.meta.env.VITE_API_BASE_URL}${category.image}`}
-                            alt={category.name}
-                            className="category-image"
-                            onError={(e) => {
-                              if (e.target) {
-                                e.target.style.display = 'none';
-                                if (e.target.nextSibling) {
-                                  e.target.nextSibling.style.display = 'block';
-                                }
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span className="category-emoji">
-                            {getCategoryIcon(category.slug)}
-                          </span>
-                        )}
+                        <img 
+                          src={category.image || '/placeholder-image.jpg'}
+                          alt={category.name}
+                          className="category-image"
+                        />
                       </div>
                       <Card.Title className="category-title">{category.name}</Card.Title>
                       <Button 

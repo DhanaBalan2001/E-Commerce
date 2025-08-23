@@ -110,7 +110,7 @@ const CustomNavbar = () => {
               className={getNavLinkClass('/bundles')}
               style={{ cursor: 'pointer' }}
             >
-              <FaGift /> <span>Bundles</span>
+              <FaGift /> <span>Funds</span>
             </Nav.Link>
             
             <Nav.Link 

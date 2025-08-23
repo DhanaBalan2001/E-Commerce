@@ -25,8 +25,8 @@ const BundlePage = () => {
       });
       setBundles(response.data);
     } catch (error) {
-      console.error('Error fetching bundles:', error);
-      toast.error('Failed to load bundles');
+      console.error('Error fetching funds:', error);
+      toast.error('Failed to load funds');
     } finally {
       setLoading(false);
     }
@@ -39,7 +39,7 @@ const BundlePage = () => {
 
   const handleAddToCart = async (bundle) => {
     if (!user) {
-      toast.error('Please login to add bundles to cart');
+      toast.error('Please login to add funds to cart');
       return;
     }
     
@@ -50,12 +50,12 @@ const BundlePage = () => {
       });
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast.success(`Bundle "${bundle.name}" added to cart!`);
+      toast.success(`Fund "${bundle.name}" added to cart!`);
       
     } catch (error) {
       console.error('Error adding bundle to cart:', error);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast.error('Failed to add bundle to cart. Please try again.');
+      toast.error('Failed to add fund to cart. Please try again.');
     }
   };
 
@@ -67,14 +67,14 @@ const BundlePage = () => {
           <Row>
             <Col>
               <div className="products-header-content">
-                <h1 className="products-page-title">Our Bundles</h1>
+                <h1 className="products-page-title">Our Funds</h1>
                 <p className="products-page-subtitle">
-                  Discover our specially curated cracker bundles at amazing prices
+                  Discover our specially curated cracker Funds at amazing prices
                 </p>
                 <div className="products-breadcrumb">
                   <Link to="/" className="breadcrumb-link">Home</Link>
                   <span className="breadcrumb-separator">›</span>
-                  <span className="breadcrumb-current">Bundles</span>
+                  <span className="breadcrumb-current">Funds</span>
                 </div>
               </div>
             </Col>
@@ -87,9 +87,9 @@ const BundlePage = () => {
         <div className="results-header">
           <Row className="align-items-center">
             <Col>
-              <h4>Bundle Offers</h4>
+              <h4>Fund Offers</h4>
               <p className="mb-0 text-muted">
-                Showing {bundles.length} bundle{bundles.length !== 1 ? 's' : ''}
+                Showing {bundles.length} Fund{bundles.length !== 1 ? 's' : ''}
               </p>
             </Col>
           </Row>
@@ -105,7 +105,7 @@ const BundlePage = () => {
             </Col>
           ) : bundles.length === 0 ? (
             <Col className="text-center py-5">
-              <h5>No bundles available</h5>
+              <h5>No Funds available</h5>
               <p className="text-muted">Check back later for exciting bundle offers!</p>
             </Col>
           ) : (

@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = './uploads';
@@ -113,4 +114,22 @@ export const getFullImageUrl = (filename, baseUrl) => {
     if (!filename) return null;
     if (filename.startsWith('http')) return filename; // Already full URL
     return `${baseUrl}/uploads/${filename}`;
+};
+
+// Helper function to upload to Cloudinary
+export const uploadFileToCloudinary = async (filePath, folder = 'crackers') => {
+    try {
+        const cloudinaryUrl = await uploadToCloudinary(filePath, folder);
+        // Delete local file after successful upload
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        return cloudinaryUrl;
+    } catch (error) {
+        // Clean up local file if upload fails
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        throw error;
+    }
 };

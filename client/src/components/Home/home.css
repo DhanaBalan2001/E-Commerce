@@ -709,7 +709,9 @@ button:focus {
 
 .about-image img {
   max-width: 80%;
+  max-height: 400px;
   height: auto;
+  object-fit: cover;
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   position: relative;

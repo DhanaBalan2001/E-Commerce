@@ -108,15 +108,9 @@ const Categories = () => {
                         <Card.Body className="text-center d-flex flex-column">
                           <div className="category-icon-container mb-3">
                             <img
-                              src={category.image ? `${import.meta.env.VITE_API_BASE_URL}${category.image}` : '/placeholder-image.jpg'}
+                              src={category.image || '/placeholder-image.jpg'}
                               alt={category.name}
                               className="category-image"
-                              style={{
-                                maxWidth: '100%',
-                                height: 'auto',
-                                maxHeight: isMobile ? '80px' : '120px',
-                                objectFit: 'contain'
-                              }}
                             />
                           </div>
                           

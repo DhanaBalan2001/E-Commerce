@@ -1,5 +1,5 @@
 import Product from '../models/Product.js';
-import { deleteUploadedFile, getImageUrl } from '../middleware/upload.js';
+import { deleteUploadedFile, getImageUrl, uploadFileToCloudinary } from '../middleware/upload.js';
 import mongoose from 'mongoose';
 import fs from 'fs';
 

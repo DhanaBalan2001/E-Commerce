@@ -459,7 +459,7 @@ const Products = () => {
                         <Card className="product-card h-100">
                           <div className="product-image-container" style={{height: window.innerWidth <= 768 ? '95px' : '120px', maxHeight: window.innerWidth <= 768 ? '95px' : '120px'}}>
                             <img
-                              src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/placeholder-image.jpg'}
+                              src={product.images?.[0]?.url || '/placeholder-image.jpg'}
                               alt={product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name}
                               className="product-image"
                             />

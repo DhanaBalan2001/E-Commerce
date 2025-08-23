@@ -1,6 +1,6 @@
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
-import { deleteUploadedFile, getImageUrl } from '../middleware/upload.js';
+import { deleteUploadedFile, getImageUrl, uploadFileToCloudinary } from '../middleware/upload.js';
 
 export const getAllCategories = async (req, res) => {
     try {
@@ -100,7 +100,7 @@ export const createCategory = async (req, res) => {
                 size: req.file.size,
                 mimetype: req.file.mimetype
             });
-            imageData = getImageUrl(req.file.filename);
+            imageData = await uploadFileToCloudinary(req.file.path, 'categories');
         }
 
         let parsedSubCategories = [];
@@ -210,7 +210,7 @@ export const updateCategory = async (req, res) => {
         }
 
         if (req.file) {
-            updateData.image = getImageUrl(req.file.filename);
+            updateData.image = await uploadFileToCloudinary(req.file.path, 'categories');
             console.log('🖼️ New image URL:', updateData.image);
         }
 

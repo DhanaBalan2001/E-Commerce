@@ -446,7 +446,7 @@ const Cart = () => {
                             <Row className="align-items-center">
                               <Col xs={5}>
                                 <h6 className="mb-0">
-                                  {bundle.bundleInfo ? `📦 Bundle` : `🎁 Gift Boxes`}
+                                  {bundle.bundleInfo ? `📦 Fund` : `🎁 Gift Boxes`}
                                 </h6>
                               </Col>
                               <Col xs={3} className="text-center">
