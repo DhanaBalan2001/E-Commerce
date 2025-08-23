@@ -125,7 +125,7 @@ const Categories = () => {
                           <div className="category-actions mt-auto">
                             <Button
                               as={Link}
-                              to={`/products?category=${category.slug}`}
+                              to="/products"
                               className="category-btn w-100"
                               variant="primary"
                               style={isMobile ? {fontSize: '0.6rem'} : {}}

@@ -567,7 +567,7 @@ const Home = () => {
                         className="category-btn-mobile mt-3"
                         size="sm"
                         onClick={() => {
-                          window.location.href = `/products?category=${category.slug}`;
+                          window.location.href = '/products';
                         }}
                       >
                         Explore

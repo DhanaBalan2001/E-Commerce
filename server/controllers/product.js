@@ -20,9 +20,24 @@ export const getAllProducts = async (req, res) => {
 
         const query = { isActive: true };
         
-        // Category filter
+        // Category filter - lookup by slug
         if (category) {
-            query.category = category;
+            const Category = mongoose.model('Category');
+            const categoryDoc = await Category.findOne({ slug: category }).select('_id');
+            if (categoryDoc) {
+                query.category = categoryDoc._id;
+            } else {
+                // If category not found, return empty results
+                return res.json({
+                    success: true,
+                    products: [],
+                    total: 0,
+                    totalPages: 0,
+                    currentPage: parseInt(page),
+                    hasNextPage: false,
+                    hasPrevPage: false
+                });
+            }
         }
         
         // Sub-category filter
