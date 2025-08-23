@@ -18,7 +18,6 @@ import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/order.js';
 import categoryRoutes from './routes/category.js';
 import addressRoutes from './routes/address.js';
-import adminRoutes from './routes/admin.js';
 import contactRoutes from './routes/contact.js';
 import paymentRoutes from './routes/payment.js';
 import seoRoutes from './routes/seo.js';
@@ -188,18 +187,18 @@ app.use((req, res, next) => {
   app.use('/api/admin/auth/login', adminLoginLimiter);
 
   // Register routes with caching for read-only endpoints
-  app.use('/api/categories', cacheMiddleware(300), categoryRoutes);
-  app.use('/api/products', cacheMiddleware(180), productRoutes);
+  app.use('/api/categories', categoryRoutes);
+  app.use('/api/products', productRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/admin/auth', adminAuthRoutes);
   app.use('/api/cart', cartRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/addresses', addressRoutes);
-  app.use('/api/admin', adminRoutes);
+  app.use('/api/admin', adminAuthRoutes);
   app.use('/api/contact', contactRoutes);
   app.use('/api/payment', paymentRoutes);
-  app.use('/api/bundles', cacheMiddleware(300), bundleRoutes);
-  app.use('/api/giftboxes', cacheMiddleware(300), giftBoxRoutes);
+  app.use('/api/bundles', bundleRoutes);
+  app.use('/api/giftboxes', giftBoxRoutes);
   app.use('/', seoRoutes);
 
 // Root route to show server is running
