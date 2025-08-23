@@ -76,7 +76,8 @@ function startServer() {
         'https://crackershop.netlify.app',
         process.env.FRONTEND_URL
       ].filter(Boolean),
-      methods: ['GET', 'POST']
+      methods: ['GET', 'POST'],
+      credentials: true
     },
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -100,21 +101,43 @@ function startServer() {
   
   // CORS with optimizations
   app.use(cors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:3000', 
-      'https://sindhucrackers.com',
-      'https://www.sindhucrackers.com',
-      'https://crackershop.netlify.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean),
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000', 
+        'https://sindhucrackers.com',
+        'https://www.sindhucrackers.com',
+        'https://crackershop.netlify.app',
+        process.env.FRONTEND_URL
+      ].filter(Boolean);
+      
+      // Allow requests with no origin (mobile apps, etc.)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'x-admin-request'],
-    maxAge: 86400 // Cache preflight for 24 hours
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'x-admin-request', 'Origin', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    optionsSuccessStatus: 200,
+    maxAge: 86400
   }));
 
-  app.use(express.json({ limit: '10mb' })); // Reduced from 50mb
+  // Handle preflight requests
+  app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, Pragma, x-admin-request, Origin, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.sendStatus(200);
+  });
+
+  app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Static uploads with caching
