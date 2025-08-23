@@ -484,7 +484,7 @@ const AdminProductForm = () => {
                   {formData.images.map((img, index) => (
                     <div key={index} className="image-preview-item position-relative">
                       <Image
-                        src={img.isNew ? img.data : `${import.meta.env.VITE_API_BASE_URL}${img.url}?v=${Date.now()}`}
+                        src={img.isNew ? img.data : (img.url?.startsWith('https://res.cloudinary.com') ? img.url : `${import.meta.env.VITE_API_BASE_URL}${img.url}?v=${Date.now()}`)}
                         alt={`Product Image ${index + 1}`}
                         thumbnail
                         onError={(e) => {

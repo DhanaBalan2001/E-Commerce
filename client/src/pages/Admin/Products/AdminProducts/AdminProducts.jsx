@@ -382,7 +382,7 @@ const AdminProducts = () => {
                   <tr key={product._id}>
                     <td>
                       <img
-                        src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/placeholder-image.jpg'}
+                        src={getImageUrl(product.images?.[0]?.url) || '/placeholder-image.jpg'}
                         alt={product.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
                         loading="lazy"
@@ -465,7 +465,7 @@ const AdminProducts = () => {
                 <div key={product._id} className="mobile-product-card">
                   <div className="mobile-card-header">
                     <img
-                      src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/placeholder-image.jpg'}
+                      src={getImageUrl(product.images?.[0]?.url) || '/placeholder-image.jpg'}
                       alt={product.name}
                       style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', marginRight: '12px' }}
                       loading="lazy"

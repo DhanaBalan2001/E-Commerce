@@ -220,35 +220,7 @@ app.get('/', (req, res) => {
     }
   });
 
-// Simple products test endpoint
-app.get('/api/products-test', async (req, res) => {
-  const startTime = Date.now();
-  try {
-    const Product = mongoose.model('Product');
-    
-    const products = await Product.find({ isActive: true })
-      .select('name price stock')
-      .limit(5)
-      .lean()
-      .maxTimeMS(10000); // 10 second timeout
-    
-    const duration = Date.now() - startTime;
-    
-    res.json({
-      success: true,
-      count: products.length,
-      products,
-      queryTime: duration
-    });
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      queryTime: duration
-    });
-  }
-});
+
 
 // Error handler
 app.use(errorHandler);
@@ -317,14 +289,18 @@ app.use((req, res) => {
       
       // Test Cloudinary connection
       try {
-        const { v2: cloudinary } = await import('cloudinary');
-        cloudinary.config({
-          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-          api_key: process.env.CLOUDINARY_API_KEY,
-          api_secret: process.env.CLOUDINARY_API_SECRET,
-        });
-        await cloudinary.api.ping();
-        console.log('✅ Cloudinary Connected');
+        if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+          const { v2: cloudinary } = await import('cloudinary');
+          cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+          });
+          await cloudinary.api.ping();
+          console.log('✅ Cloudinary Connected');
+        } else {
+          console.log('⚠️ Cloudinary credentials not configured - using local storage');
+        }
       } catch (error) {
         console.log('❌ Cloudinary Connection Failed:', error.message);
       }
