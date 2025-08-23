@@ -26,7 +26,7 @@ router.get('/search', searchProducts);
 router.get('/category/:category', getProductsByCategory);
 router.get('/:id', getProductById);
 router.get('/:productId/reviews', getProductReviews);
-router.get('/reviews/recent', getRecentReviews)
+router.get('/reviews/recent', getRecentReviews);
 
 // User routes
 router.post('/:productId/review', authenticateUser,validateReview, addProductReview);
