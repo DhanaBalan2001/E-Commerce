@@ -180,25 +180,24 @@ app.use((req, res, next) => {
   app.use(queueMiddleware);
   
   // Apply rate limiter to all API routes
-  app.use('/api', rateLimiter);
+  // app.use('/api', rateLimiter);
   
   // Special limiters for sensitive endpoints
-  app.use('/api/auth/send-otp', otpRateLimiter);
-  app.use('/api/admin/auth/login', adminLoginLimiter);
+  // app.use('/api/auth/send-otp', otpRateLimiter);
+  // app.use('/api/admin/auth/login', adminLoginLimiter);
 
-  // Register routes with caching for read-only endpoints
-  app.use('/api/categories', categoryRoutes);
-  app.use('/api/products', productRoutes);
+  // Register routes
   app.use('/api/auth', authRoutes);
-  app.use('/api/admin/auth', adminAuthRoutes);
+  app.use('/api/products', productRoutes);
+  app.use('/api/categories', categoryRoutes);
   app.use('/api/cart', cartRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/addresses', addressRoutes);
   app.use('/api/admin', adminAuthRoutes);
   app.use('/api/contact', contactRoutes);
   app.use('/api/payment', paymentRoutes);
-  app.use('/api/bundles', bundleRoutes);
-  app.use('/api/giftboxes', giftBoxRoutes);
+  // app.use('/api/bundles', bundleRoutes);
+  // app.use('/api/giftboxes', giftBoxRoutes);
   app.use('/', seoRoutes);
 
 // Root route to show server is running
