@@ -161,7 +161,7 @@ app.use((req, res, next) => {
   app.use('/api', rateLimiter);
   
   // Special limiters for sensitive endpoints
-  app.use('/api/auth/otp', otpRateLimiter);
+  app.use('/api/auth/send-otp', otpRateLimiter);
   app.use('/api/admin/auth/login', adminLoginLimiter);
 
   // Register routes with caching for read-only endpoints

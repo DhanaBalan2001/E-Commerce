@@ -60,20 +60,25 @@ export const rateLimiter = rateLimit({
   }
 });
 
-// OTP rate limiter with automatic logout
+// OTP rate limiter with email-based tracking
 export const otpRateLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: process.env.NODE_ENV === 'production' ? 5 : 15,
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10, // Allow 10 OTP requests per 5 minutes
+  keyGenerator: (req) => {
+    // Use email for rate limiting instead of IP
+    return req.body.email || req.ip;
+  },
   message: {
-    message: 'Too many OTP requests, please try again later.',
-    retryAfter: '1 minute'
+    message: 'Too many OTP requests for this email, please try again later.',
+    retryAfter: '5 minutes'
   },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).json({
-      message: 'Too many OTP requests, please try again later.',
-      retryAfter: '1 minute'
+      success: false,
+      message: 'Too many OTP requests for this email, please try again later.',
+      retryAfter: '5 minutes'
     });
   }
 });
