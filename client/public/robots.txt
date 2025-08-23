@@ -13,3 +13,4 @@ Disallow: /orders
 Disallow: /profile
 
 Sitemap: https://sindhucrackers.com/sitemap.xml
+Sitemap: https://sindhucrackers.com/sitemap-products.xml
