@@ -388,10 +388,9 @@ const AdminCategories = () => {
                   <tr key={category._id}>
                     <td>
                       <img
-                        src={category.image ? `${import.meta.env.VITE_API_BASE_URL}${category.image}?v=${imageRefreshKey}&t=${Date.now()}&updated=${category.updatedAt || category.createdAt}` : '/placeholder-image.jpg'}
+                        src={category.image || '/placeholder-image.jpg'}
                         alt={category.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
-                        key={`${category._id}-${imageRefreshKey}-${category.updatedAt || category.createdAt}`}
                         onError={(e) => {
                           e.target.src = '/placeholder-image.jpg';
                         }}

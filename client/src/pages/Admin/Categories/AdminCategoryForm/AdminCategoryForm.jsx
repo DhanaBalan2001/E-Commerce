@@ -391,11 +391,10 @@ const AdminCategoryForm = () => {
                       </small>
                       <div className="mt-1">
                         <img 
-                          src={imagePreview || (formData.image ? `${import.meta.env.VITE_API_BASE_URL}${formData.image}?v=${Date.now()}&cache=${Math.random()}` : '/placeholder-image.jpg')} 
+                          src={imagePreview || formData.image || '/placeholder-image.jpg'} 
                           alt={imagePreview ? 'Preview' : 'Current category image'} 
                           className="img-thumbnail"
                           style={{ maxWidth: '150px', maxHeight: '150px' }}
-                          key={`${formData.image}-${Date.now()}`}
                           onError={(e) => {
                             e.target.src = '/placeholder-image.jpg';
                           }}

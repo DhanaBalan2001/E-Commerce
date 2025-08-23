@@ -557,7 +557,7 @@ const Home = () => {
                     <Card.Body className="text-center">
                       <div className="category-icon">
                         <img 
-                          src={category.image || '/placeholder-image.jpg'}
+                          src={getImageUrl(category.image)}
                           alt={category.name}
                           className="category-image"
                         />

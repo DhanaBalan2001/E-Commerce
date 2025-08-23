@@ -108,7 +108,7 @@ const Categories = () => {
                         <Card.Body className="text-center d-flex flex-column">
                           <div className="category-icon-container mb-3">
                             <img
-                              src={category.image || '/placeholder-image.jpg'}
+                              src={getImageUrl(category.image)}
                               alt={category.name}
                               className="category-image"
                             />
