@@ -18,6 +18,7 @@ import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/order.js';
 import categoryRoutes from './routes/category.js';
 import addressRoutes from './routes/address.js';
+import adminRoutes from './routes/admin.js';
 import contactRoutes from './routes/contact.js';
 import paymentRoutes from './routes/payment.js';
 import seoRoutes from './routes/seo.js';
@@ -75,8 +76,7 @@ function startServer() {
         'https://crackershop.netlify.app',
         process.env.FRONTEND_URL
       ].filter(Boolean),
-      methods: ['GET', 'POST'],
-      credentials: true
+      methods: ['GET', 'POST']
     },
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -100,43 +100,21 @@ function startServer() {
   
   // CORS with optimizations
   app.use(cors({
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        'http://localhost:5173',
-        'http://localhost:3000', 
-        'https://sindhucrackers.com',
-        'https://www.sindhucrackers.com',
-        'https://crackershop.netlify.app',
-        process.env.FRONTEND_URL
-      ].filter(Boolean);
-      
-      // Allow requests with no origin (mobile apps, etc.)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      
-      return callback(new Error('Not allowed by CORS'));
-    },
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000', 
+      'https://sindhucrackers.com',
+      'https://www.sindhucrackers.com',
+      'https://crackershop.netlify.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'x-admin-request', 'Origin', 'X-Requested-With', 'Accept'],
-    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
-    optionsSuccessStatus: 200,
-    maxAge: 86400
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'x-admin-request'],
+    maxAge: 86400 // Cache preflight for 24 hours
   }));
 
-  // Handle preflight requests
-  app.options('*', (req, res) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin);
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, Pragma, x-admin-request, Origin, X-Requested-With, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.sendStatus(200);
-  });
-
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '10mb' })); // Reduced from 50mb
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Static uploads with caching
@@ -180,24 +158,25 @@ app.use((req, res, next) => {
   app.use(queueMiddleware);
   
   // Apply rate limiter to all API routes
-  // app.use('/api', rateLimiter);
+  app.use('/api', rateLimiter);
   
   // Special limiters for sensitive endpoints
-  // app.use('/api/auth/send-otp', otpRateLimiter);
-  // app.use('/api/admin/auth/login', adminLoginLimiter);
+  app.use('/api/auth/otp', otpRateLimiter);
+  app.use('/api/admin/auth/login', adminLoginLimiter);
 
-  // Register routes
+  // Register routes with caching for read-only endpoints
+  app.use('/api/categories', cacheMiddleware(300), categoryRoutes);
+  app.use('/api/products', cacheMiddleware(180), productRoutes);
   app.use('/api/auth', authRoutes);
-  app.use('/api/products', productRoutes);
-  app.use('/api/categories', categoryRoutes);
+  app.use('/api/admin/auth', adminAuthRoutes);
   app.use('/api/cart', cartRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/addresses', addressRoutes);
-  app.use('/api/admin', adminAuthRoutes);
+  app.use('/api/admin', adminRoutes);
   app.use('/api/contact', contactRoutes);
   app.use('/api/payment', paymentRoutes);
-  // app.use('/api/bundles', bundleRoutes);
-  // app.use('/api/giftboxes', giftBoxRoutes);
+  app.use('/api/bundles', cacheMiddleware(300), bundleRoutes);
+  app.use('/api/giftboxes', cacheMiddleware(300), giftBoxRoutes);
   app.use('/', seoRoutes);
 
 // Root route to show server is running
