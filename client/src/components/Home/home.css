@@ -1060,7 +1060,7 @@ button:focus {
 
 .category-image {
   max-width: 100%;
-  max-height: 120px;
+  max-height: 280px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1081,7 +1081,7 @@ button:focus {
     background: #f8f9fa;
     padding: 0.5rem;
     text-align: center;
-    height: 160px !important;
+    height: 200px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1096,7 +1096,7 @@ button:focus {
   
   .categories-section .category-image {
     max-width: 100% !important;
-    max-height: 140px !important;
+    max-height: 300px !important;
     width: auto !important;
     height: auto !important;
     object-fit: contain !important;
@@ -1239,8 +1239,8 @@ button:focus {
   }
   
   .category-image {
-    max-width: 60px !important;
-    max-height: 60px !important;
+    max-width: 120px !important;
+    max-height: 120px !important;
     width: auto !important;
     height: auto !important;
     object-fit: contain !important;
@@ -1282,8 +1282,8 @@ button:focus {
   }
   
   .category-image {
-    max-width: 40px !important;
-    max-height: 40px !important;
+    max-width: 100px !important;
+    max-height: 100px !important;
     width: auto !important;
     height: auto !important;
     object-fit: contain !important;

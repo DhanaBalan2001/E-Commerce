@@ -117,7 +117,7 @@
 /* Category Image Container */
 .category-image-container {
   position: relative;
-  height: 200px !important;
+  height: 320px !important;
   width: 100% !important;
   display: flex;
   align-items: center;
@@ -132,7 +132,7 @@
 .category-image {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
   transition: all 0.3s ease;
 }
@@ -380,7 +380,7 @@
   }
   
   .category-image-container {
-    height: 180px !important;
+    height: 280px !important;
   }
   
   .subcategory-card {
@@ -402,7 +402,7 @@
   }
   
   .category-image-container {
-    height: 160px !important;
+    height: 260px !important;
   }
   
   .subcategory-card {
@@ -451,7 +451,7 @@
   }
   
   .category-image-container {
-    height: 140px !important;
+    height: 200px !important;
   }
   
   .subcategory-card {
@@ -513,7 +513,7 @@
   }
   
   .category-image-container {
-    height: 120px !important;
+    height: 180px !important;
   }
   
   .subcategory-card {
@@ -588,7 +588,7 @@
   }
   
   .category-image-container {
-    height: 100px !important;
+    height: 140px !important;
   }
   
   .subcategory-card {

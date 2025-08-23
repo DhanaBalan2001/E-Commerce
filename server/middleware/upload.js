@@ -107,3 +107,10 @@ export const handleMulterError = (error, req, res, next) => {
 export const getImageUrl = (filename) => {
     return `/uploads/${filename}`;
 };
+
+// Helper function to get full image URL with base URL
+export const getFullImageUrl = (filename, baseUrl) => {
+    if (!filename) return null;
+    if (filename.startsWith('http')) return filename; // Already full URL
+    return `${baseUrl}/uploads/${filename}`;
+};
