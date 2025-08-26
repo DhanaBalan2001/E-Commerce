@@ -184,8 +184,13 @@ const AdminProductDetail = () => {
                     <Carousel.Item key={index}>
                       <img
                         className="d-block w-100 product-image"
-                        src={image?.url ? `${import.meta.env.VITE_API_BASE_URL}${image.url}` : '/placeholder-image.jpg'}
+                        src={image?.url ? getImageUrl(image.url) : '/placeholder-image.jpg'}
                         alt={`${product.name} ${index + 1}`}
+                        onError={(e) => {
+                          if (e.target.src !== window.location.origin + '/placeholder-image.jpg') {
+                            e.target.src = '/placeholder-image.jpg';
+                          }
+                        }}
                       />
                     </Carousel.Item>
                   ))}

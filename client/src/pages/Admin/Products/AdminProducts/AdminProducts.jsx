@@ -103,8 +103,7 @@ const AdminProducts = () => {
   const total = productsData?.total || 0;
   const categories = categoriesData?.categories || [];
 
-  // Single stable image key to prevent flickering
-  const [imageKey] = useState(Date.now());
+
 
   useEffect(() => {
     if (filters.refresh) {
@@ -121,9 +120,8 @@ const AdminProducts = () => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1
     }));
-    // Auto-close mobile filters when something is selected
     if (window.innerWidth <= 768) {
       setShowMobileFilters(false);
     }
@@ -172,7 +170,6 @@ const AdminProducts = () => {
       toast.success('Product deleted successfully!');
       setShowDeleteModal(false);
       setProductToDelete(null);
-      // Immediate local update
       refetch();
     } catch (error) {
       toast.error(error.message || 'Failed to delete product');
@@ -382,10 +379,15 @@ const AdminProducts = () => {
                   <tr key={product._id}>
                     <td>
                       <img
-                        src={getImageUrl(product.images?.[0]?.url) || '/placeholder-image.jpg'}
+                        src={product.images?.[0]?.url ? getImageUrl(product.images[0].url) : '/placeholder-image.jpg'}
                         alt={product.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
                         loading="lazy"
+                        onError={(e) => {
+                          if (e.target.src !== window.location.origin + '/placeholder-image.jpg') {
+                            e.target.src = '/placeholder-image.jpg';
+                          }
+                        }}
                       />
                     </td>
                     <td>
@@ -465,10 +467,15 @@ const AdminProducts = () => {
                 <div key={product._id} className="mobile-product-card">
                   <div className="mobile-card-header">
                     <img
-                      src={getImageUrl(product.images?.[0]?.url) || '/placeholder-image.jpg'}
+                      src={product.images?.[0]?.url ? getImageUrl(product.images[0].url) : '/placeholder-image.jpg'}
                       alt={product.name}
                       style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', marginRight: '12px' }}
                       loading="lazy"
+                      onError={(e) => {
+                        if (e.target.src !== window.location.origin + '/placeholder-image.jpg') {
+                          e.target.src = '/placeholder-image.jpg';
+                        }
+                      }}
                     />
                     <div style={{ flex: 1 }}>
                       <div className="mobile-card-title">{product.name}</div>

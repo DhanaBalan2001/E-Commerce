@@ -30,10 +30,9 @@ export const useProducts = (filters = {}) => {
   }, [memoizedFilters]);
 
   useEffect(() => {
-    // Reduce debounce time for faster response
     const timeoutId = setTimeout(() => {
       fetchProducts();
-    }, memoizedFilters.search ? 200 : 0);
+    }, memoizedFilters.search ? 300 : 0);
 
     return () => clearTimeout(timeoutId);
   }, [fetchProducts, memoizedFilters.search]);

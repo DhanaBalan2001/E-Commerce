@@ -6,12 +6,19 @@ import { useToast } from '../../../../context/ToastContext';
 import { productService } from '../../../../services/productService';
 import { categoryService } from '../../../../services/categoryService';
 import { useCreateProduct, useUpdateProduct } from '../../../../hooks/useProducts';
+import { getImageUrl } from '../../../../utils/imageUrl';
 import './adminproductform.css';
 
 const MobileDropdown = ({ value, onChange, options, placeholder, isInvalid }) => {
   const [showModal, setShowModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const selectedOption = options.find(opt => opt.value === value);
-  const isMobile = window.innerWidth <= 768;
+  
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   if (!isMobile) {
     return (
@@ -154,8 +161,10 @@ const AdminProductForm = () => {
     let processedValue = value;
     
     if (type === 'number') {
-      if (name === 'price' || name === 'weight' || name === 'stock' || name === 'discount') {
-        processedValue = Math.max(0, parseFloat(value) || 0);
+      if (name === 'price' || name === 'discount') {
+        processedValue = value; // Keep as string for input display
+      } else if (name === 'weight' || name === 'stock') {
+        processedValue = Math.max(0, parseInt(value) || 0);
       }
     }
     
@@ -213,15 +222,21 @@ const AdminProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return toast.error('Please fix the form errors');
+    if (!validateForm()) {
+      toast.error('Please fix the form errors');
+      return;
+    }
 
     try {
       const submitData = new FormData();
       Object.keys(formData).forEach(key => {
         if (key !== 'images') {
           let value = formData[key];
-          if (key === 'stock' || key === 'price' || key === 'weight' || key === 'discount') {
+          if (key === 'stock' || key === 'weight') {
             value = parseInt(value, 10) || 0;
+          }
+          if (key === 'price' || key === 'discount') {
+            value = parseFloat(value) || 0;
           }
           if (key === 'subCategories' && Array.isArray(value)) {
             value = JSON.stringify(value);
@@ -230,32 +245,27 @@ const AdminProductForm = () => {
         }
       });
       
-      // Send existing images that weren't removed
       const existingImages = formData.images.filter(img => !img.isNew);
       if (existingImages.length > 0) {
         submitData.append('existingImages', JSON.stringify(existingImages));
       }
       
-      // Send new image files
       imageFiles.forEach(file => submitData.append('images', file));
       
-
-
-      // Scroll to top immediately
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
       if (isEdit) {
         const response = await productService.updateProduct(id, submitData);
+        // Show success message immediately
         toast.success('Product updated successfully!');
+        // Then scroll to top
+        setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 100);
         
-        // Update form data with response to show updated images immediately
         const updatedProduct = response.product;
         setFormData({
           name: updatedProduct.name || '',
           description: updatedProduct.description || '',
           price: updatedProduct.price || '',
           category: updatedProduct.category?._id || updatedProduct.category || '',
-          subCategories: Array.isArray(updatedProduct.subCategories) ? updatedProduct.subCategories : (updatedProduct.subCategory ? [updatedProduct.subCategory] : []),
+          subCategories: Array.isArray(updatedProduct.subCategories) ? updatedProduct.subCategories : [],
           stock: updatedProduct.stock || '',
           unit: updatedProduct.unit || '',
           weight: updatedProduct.weight || '',
@@ -266,15 +276,19 @@ const AdminProductForm = () => {
         setImageFiles([]);
       } else {
         await productService.createProduct(submitData);
+        // Show success message immediately
         toast.success('Product created successfully!');
+        // Then scroll to top
+        setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 100);
+        
+        setTimeout(() => {
+          navigate('/admin/products', { replace: true });
+        }, 1200);
       }
-
-      // Navigate with cache busting parameter
-      setTimeout(() => {
-        navigate('/admin/products?refresh=' + Date.now(), { replace: true });
-      }, 1500);
+      
     } catch (error) {
       toast.error(error.message || 'Failed to save product');
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 100);
     }
   };
 
@@ -331,17 +345,14 @@ const AdminProductForm = () => {
                     onChange={handleInputChange}
                     isInvalid={!!errors.price}
                     placeholder="Enter product price"
+                    step="0.01"
+                    min="0"
                   />
                   <Form.Control.Feedback type="invalid">{errors.price}</Form.Control.Feedback>
                 </Form.Group>
 
-                <Form.Group className="mb-3 category-group" style={{
-                  marginBottom: window.innerWidth <= 768 ? '0.5rem' : '1rem'
-                }}>
-                  <Form.Label style={{
-                    fontSize: window.innerWidth <= 768 ? '0.7rem' : '1rem',
-                    marginBottom: window.innerWidth <= 768 ? '0.2rem' : '0.5rem'
-                  }}>Category *</Form.Label>
+                <Form.Group className="mb-3">
+                  <Form.Label>Category *</Form.Label>
                   {loadingCategories ? (
                     <Spinner animation="border" size="sm" />
                   ) : (
@@ -415,13 +426,8 @@ const AdminProductForm = () => {
                   <Form.Control.Feedback type="invalid">{errors.stock}</Form.Control.Feedback>
                 </Form.Group>
 
-                <Form.Group className="mb-3" style={{
-                  marginBottom: window.innerWidth <= 768 ? '0.5rem' : '1rem'
-                }}>
-                  <Form.Label style={{
-                    fontSize: window.innerWidth <= 768 ? '0.7rem' : '1rem',
-                    marginBottom: window.innerWidth <= 768 ? '0.2rem' : '0.5rem'
-                  }}>Unit *</Form.Label>
+                <Form.Group className="mb-3">
+                  <Form.Label>Unit *</Form.Label>
                   <MobileDropdown
                     value={formData.unit}
                     onChange={(value) => handleInputChange({ target: { name: 'unit', value } })}
@@ -451,6 +457,9 @@ const AdminProductForm = () => {
                     value={formData.discount}
                     onChange={handleInputChange}
                     placeholder="Enter discount percentage"
+                    step="0.01"
+                    min="0"
+                    max="100"
                   />
                 </Form.Group>
 
@@ -484,11 +493,13 @@ const AdminProductForm = () => {
                   {formData.images.map((img, index) => (
                     <div key={index} className="image-preview-item position-relative">
                       <Image
-                        src={img.isNew ? img.data : (img.url?.startsWith('https://res.cloudinary.com') ? img.url : `${import.meta.env.VITE_API_BASE_URL}${img.url}?v=${Date.now()}`)}
+                        src={img.isNew ? img.data : getImageUrl(img.url, true)}
                         alt={`Product Image ${index + 1}`}
                         thumbnail
                         onError={(e) => {
-                          e.target.src = '/placeholder-image.svg';
+                          if (e.target.src !== window.location.origin + '/placeholder-image.jpg') {
+                            e.target.src = '/placeholder-image.jpg';
+                          }
                         }}
                       />
                       {!img.isNew && (

@@ -194,6 +194,8 @@ app.get('/', (req, res) => {
   });
 });
 
+
+
   // Enhanced health check
   app.get('/api/health', async (req, res) => {
     try {

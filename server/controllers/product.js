@@ -138,10 +138,10 @@ export const createProduct = async (req, res) => {
     const productData = req.body;
 
     // Convert numeric fields
-    if (productData.price) productData.price = parseInt(productData.price, 10);
+    if (productData.price) productData.price = parseFloat(productData.price);
     if (productData.weight) productData.weight = parseInt(productData.weight, 10);
     if (productData.stock) productData.stock = parseInt(productData.stock, 10);
-    if (productData.discount) productData.discount = parseInt(productData.discount, 10);
+    if (productData.discount) productData.discount = parseFloat(productData.discount);
     if (productData.featured !== undefined) productData.isFeatured = productData.featured === 'true' || productData.featured === true;
     
     // Handle subCategories array
@@ -189,10 +189,10 @@ export const updateProduct = async (req, res) => {
     const updateData = { ...req.body };
 
     // Convert fields to correct types
-    if (updateData.price) updateData.price = parseInt(updateData.price, 10);
+    if (updateData.price) updateData.price = parseFloat(updateData.price);
     if (updateData.weight) updateData.weight = parseInt(updateData.weight, 10);
     if (updateData.stock) updateData.stock = parseInt(updateData.stock, 10);
-    if (updateData.discount) updateData.discount = parseInt(updateData.discount, 10);
+    if (updateData.discount) updateData.discount = parseFloat(updateData.discount);
     if (updateData.featured !== undefined) updateData.isFeatured = updateData.featured === 'true' || updateData.featured === true;
     
     // Handle subCategories array
