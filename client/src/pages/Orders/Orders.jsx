@@ -20,6 +20,7 @@ import {
 import { useAppContext } from '../../context/AppContext';
 import { orderService, cartService } from '../../services';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import { getImageUrl } from '../../utils/imageUrl';
 import './orders.css';
 
 const Orders = () => {
@@ -453,7 +454,7 @@ const Orders = () => {
                           <Col xs={3} sm={2}>
                             {item.product?.images?.[0] && (
                               <img
-                                src={item.product.images[0].url || '/images/placeholder-product.jpg'}
+                                src={getImageUrl(item.product.images[0].url) || '/images/placeholder-product.jpg'}
                                 alt={item.product.name}
                                 className="modal-item-image"
                                 onError={(e) => {

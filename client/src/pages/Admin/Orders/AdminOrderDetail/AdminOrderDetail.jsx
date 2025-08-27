@@ -27,6 +27,7 @@ import {
 } from 'react-icons/fa';
 import { useToast } from '../../../../context/ToastContext';
 import api from '../../../../services/api';
+import { getImageUrl } from '../../../../utils/imageUrl';
 import './adminorderdetail.css';
 
 const AdminOrderDetail = () => {
@@ -391,7 +392,7 @@ const AdminOrderDetail = () => {
                           {order.paymentInfo.paymentScreenshot.path && (
                             <div>
                               <img 
-                                src={`${import.meta.env.VITE_API_BASE_URL}/${order.paymentInfo.paymentScreenshot.path}`}
+                                src={getImageUrl(order.paymentInfo.paymentScreenshot.path)}
                                 alt="Payment Screenshot"
                                 className="payment-screenshot"
                                 style={{ 
@@ -401,14 +402,14 @@ const AdminOrderDetail = () => {
                                   borderRadius: '8px',
                                   cursor: 'pointer'
                                 }}
-                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/${order.paymentInfo.paymentScreenshot.path}`, '_blank')}
+                                onClick={() => window.open(getImageUrl(order.paymentInfo.paymentScreenshot.path), '_blank')}
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   e.target.nextSibling.style.display = 'block';
                                 }}
                               />
                               <div style={{display: 'none', padding: '20px', background: '#f8d7da', color: '#721c24', border: '1px solid #f5c6cb', borderRadius: '4px'}}>
-                                Failed to load image from: {import.meta.env.VITE_API_BASE_URL}/{order.paymentInfo.paymentScreenshot.path}
+                                Failed to load payment screenshot image
                               </div>
                             </div>
                           )}

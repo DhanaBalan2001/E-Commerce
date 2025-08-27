@@ -6,6 +6,7 @@ import { useAppContext } from '../../context/AppContext';
 import { cartService } from '../../services';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CrackerLoader from '../../components/common/CrackerLoader';
+import { getImageUrl } from '../../utils/imageUrl';
 import './cart.css';
 
 const Cart = () => {
@@ -519,7 +520,7 @@ const Cart = () => {
                               <Col xs={2}>
                                 {item.product?.images?.[0] ? (
                                   <img
-                                    src={`${import.meta.env.VITE_API_BASE_URL}${item.product.images[0].url}`}
+                                    src={getImageUrl(item.product.images[0].url)}
                                     alt={item.product?.name}
                                     style={{width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px'}}
                                   />
@@ -707,7 +708,7 @@ const Cart = () => {
                               <div className="cart-product-image-container">
                                 {item.product?.images?.[0] ? (
                                   <img
-                                    src={`${import.meta.env.VITE_API_BASE_URL}${item.product.images[0].url}`}
+                                    src={getImageUrl(item.product.images[0].url)}
                                     alt={item.product?.name}
                                     className="cart-product-image"
                                     onError={(e) => {

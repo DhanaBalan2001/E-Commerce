@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCalendar, FaMapMarkerAlt, FaPhone, FaEnvelope, FaBox, FaTruck, FaCheckCircle } from 'react-icons/fa';
 import { orderService } from '../../services';
+import { getImageUrl } from '../../utils/imageUrl';
 import './orderdetails.css';
 
 const OrderDetails = () => {

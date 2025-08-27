@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Form, Alert, Spinner } from 'react-b
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { cartService, orderService, authService } from '../../services';
+import { getImageUrl } from '../../utils/imageUrl';
 import './checkout.css';
 
 const Checkout = () => {
@@ -382,7 +383,7 @@ const Checkout = () => {
                             <div className="item-image">
                               {itemImage ? (
                                 <img
-                                  src={`${import.meta.env.VITE_API_BASE_URL}${itemImage.url}`}
+                                  src={getImageUrl(itemImage.url)}
                                   alt={itemName}
                                   className="checkout-item-image"
                                   style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
