@@ -190,9 +190,7 @@ const Orders = () => {
   const calculateOrderTotal = (order) => {
     const subtotal = order.items?.reduce((sum, item) => 
       sum + (item.price * item.quantity), 0) || 0;
-    const shipping = order.shippingCost || 0;
-    const tax = order.taxAmount || 0;
-    return subtotal + shipping + tax;
+    return subtotal;
   };
 
   
@@ -482,18 +480,6 @@ const Orders = () => {
                 <div className="detail-section">
                   <h6>Order Summary</h6>
                   <div className="order-summary-details">
-                    <div className="summary-row">
-                      <span>Subtotal:</span>
-                      <span>{formatCurrency(selectedOrder.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0)}</span>
-                    </div>
-                    <div className="summary-row">
-                      <span>Shipping:</span>
-                      <span>{formatCurrency(selectedOrder.shippingCost || 0)}</span>
-                    </div>
-                    <div className="summary-row">
-                      <span>Tax:</span>
-                      <span>{formatCurrency(selectedOrder.taxAmount || 0)}</span>
-                    </div>
                     <div className="summary-row total-row">
                       <span><strong>Total:</strong></span>
                       <span><strong>{formatCurrency(calculateOrderTotal(selectedOrder))}</strong></span>

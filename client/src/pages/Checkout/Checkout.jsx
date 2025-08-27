@@ -98,9 +98,9 @@ const Checkout = () => {
 
   const calculateTotals = () => {
     const subtotal = cartTotal;
-    const tax = subtotal * 0.18;
-    const shipping = subtotal >= 500 ? 0 : 50;
-    const total = subtotal + tax + shipping;
+    const tax = 0;
+    const shipping = 0;
+    const total = subtotal;
     
     return { subtotal, tax, shipping, total };
   };
@@ -478,7 +478,7 @@ const Checkout = () => {
                 
                 <div className="summary-row total-row" style={{display: 'flex', justifyContent: 'space-between', marginBottom: '15px'}}>
                   <span className="summary-label"><strong>Total:</strong></span>
-                  <span className="summary-value"><strong>{formatCurrency(cartTotal)}</strong></span>
+                  <span className="summary-value"><strong>{formatCurrency(total)}</strong></span>
                 </div>
                 
                 {/* Complimentary Gifts Notice */}

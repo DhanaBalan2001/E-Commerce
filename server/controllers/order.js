@@ -53,9 +53,9 @@ export const createOrder = async (req, res) => {
         }
 
         // Calculate pricing
-        const tax = subtotal * 0.18; // 18% GST
-        const shipping = subtotal > 1000 ? 0 : 50; // Free shipping above ₹1000
-        const total = subtotal + tax + shipping;
+        const tax = 0;
+        const shipping = 0;
+        const total = subtotal;
 
         // Create order
         const order = new Order({

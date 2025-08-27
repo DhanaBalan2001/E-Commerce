@@ -173,10 +173,6 @@ const OrderDetails = () => {
             </Col>
             <Col md={4}>
               <h5>Order Summary:</h5>
-              <p>Subtotal: ₹{order.pricing?.subtotal}</p>
-              <p>Tax: ₹{order.pricing?.tax}</p>
-              <p>Shipping: ₹{order.pricing?.shipping}</p>
-              <hr/>
               <h5>Total: ₹{order.pricing?.total}</h5>
               <p>Payment: {order.paymentInfo?.method}</p>
               <p>Status: {order.paymentInfo?.status}</p>
