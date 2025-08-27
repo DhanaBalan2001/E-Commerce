@@ -6,6 +6,7 @@ import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../context/ToastContext';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from 'react-bootstrap';
+import { getImageUrl } from '../../utils/imageUrl';
 import './productdetail.css';
 
 const ProductDetail = () => {
@@ -184,7 +185,7 @@ const ProductDetail = () => {
               <div className="main-image-container mb-3">
                 {product.images && product.images.length > 0 ? (
                   <img
-                    src={`${import.meta.env.VITE_API_BASE_URL}${product.images[selectedImageIndex]?.url}` || '/placeholder-image.svg'}
+                    src={getImageUrl(product.images[selectedImageIndex]?.url) || '/placeholder-image.svg'}
                     alt={product.name}
                     className="main-product-image"
                     onError={(e) => {
@@ -210,7 +211,7 @@ const ProductDetail = () => {
                     {product.images.map((image, index) => (
                       <Col key={index} xs={3} className="mb-2">
                         <img
-                          src={`${import.meta.env.VITE_API_BASE_URL}${image.url}` || '/placeholder-image.svg'}
+                          src={getImageUrl(image.url) || '/placeholder-image.svg'}
                           alt={`${product.name} ${index + 1}`}
                           className={`thumbnail-image ${
                             selectedImageIndex === index ? 'active' : ''
@@ -476,13 +477,21 @@ const ProductDetail = () => {
                   </div>
 
                   {/* Add Review Button */}
-                  {isAuthenticated && (
-                    <div className="text-center mt-4">
-                      <Link to={`/products/${id}/write-review`} className="btn btn-outline-primary">
-                        Write a Review
-                      </Link>
-                    </div>
-                  )}
+                  <div className="text-center mt-4">
+                    <Button 
+                      variant="outline-primary"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast.warning('Please login to write a review');
+                          navigate('/login');
+                          return;
+                        }
+                        setShowReviewModal(true);
+                      }}
+                    >
+                      Write a Review
+                    </Button>
+                  </div>
                 </div>
               </Tab>
 
