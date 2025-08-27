@@ -626,7 +626,7 @@ const Home = () => {
                       <Card.Body className="text-center d-flex flex-column">
                         <div className="product-icon-container mb-3">
                           <img
-                            src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/images/placeholder-product.jpg'}
+                            src={product.images?.[0]?.url ? getImageUrl(product.images[0].url) : '/images/placeholder-product.jpg'}
                             alt={product.name}
                             className="product-image"
                           />
@@ -654,7 +654,7 @@ const Home = () => {
                           {product.images && product.images.length > 0 ? (
                             product.images.length === 1 ? (
                               <img 
-                                src={product.images?.[0]?.url ? `${import.meta.env.VITE_API_BASE_URL}${product.images[0].url}` : '/images/placeholder-product.jpg'}
+                                src={product.images?.[0]?.url ? getImageUrl(product.images[0].url) : '/images/placeholder-product.jpg'}
                                 alt={product.name}
                                 className="product-img"
                               />
@@ -668,7 +668,7 @@ const Home = () => {
                                 {product.images.map((image, index) => (
                                   <Carousel.Item key={index}>
                                     <img 
-                                      src={image?.url ? `${import.meta.env.VITE_API_BASE_URL}${image.url}` : '/images/placeholder-product.jpg'}
+                                      src={image?.url ? getImageUrl(image.url) : '/images/placeholder-product.jpg'}
                                       alt={`${product.name} - Image ${index + 1}`}
                                       className="product-img"
                                     />

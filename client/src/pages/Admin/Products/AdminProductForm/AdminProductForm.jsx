@@ -137,13 +137,13 @@ const AdminProductForm = () => {
           setFormData({
             name: product.name || '',
             description: product.description || '',
-            price: product.price || '',
+            price: product.price ? String(product.price) : '',
             category: product.category?._id || product.category || '',
             subCategories: Array.isArray(product.subCategories) ? product.subCategories : (product.subCategory ? [product.subCategory] : []),
-            stock: product.stock || '',
+            stock: product.stock ? String(product.stock) : '',
             unit: product.unit || '',
-            weight: product.weight || '',
-            discount: product.discount || '',
+            weight: product.weight ? String(product.weight) : '',
+            discount: product.discount ? String(product.discount) : '',
             featured: product.isFeatured || false,
             images: product.images || []
           });
@@ -174,6 +174,7 @@ const AdminProductForm = () => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    // Keep all values as strings to prevent unwanted number conversions
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
