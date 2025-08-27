@@ -1,12 +1,32 @@
 import api from './api';
 
+
 export const productService = {
+  // Admin: Update product text only (bypass file validation)
+  updateProductTextOnly: async (id, productData) => {
+    if (!id) throw new Error('Product ID is required');
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await api.put(`/products/${id}/text-only`, productData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to update product' };
+    }
+  },
   // Get all products with filters
   getProducts: async (params = {}) => {
     try {
-      const response = await api.get('/products', { params });
+      const response = await api.get('/products', { 
+        params,
+        timeout: 30000
+      });
       
-      // Ensure consistent response format
       if (response.data.success) {
         return {
           products: response.data.products || [],
@@ -29,8 +49,12 @@ export const productService = {
   // Get product by ID
   getProductById: async (id) => {
     if (!id) throw new Error('Product ID is required');
+    
     try {
-      const response = await api.get(`/products/${id}`);
+      const response = await api.get(`/products/${id}`, {
+        timeout: 15000
+      });
+      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch product' };
@@ -83,11 +107,14 @@ export const productService = {
   createProduct: async (productData) => {
     try {
       const token = localStorage.getItem('adminToken');
+      
       const response = await api.post('/products', productData, {
         headers: {
           Authorization: `Bearer ${token}`
-        }
+        },
+        timeout: 60000
       });
+      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to create product' };
@@ -95,15 +122,18 @@ export const productService = {
   },
 
   // Admin: Update product
-   updateProduct: async (id, productData) => {
+  updateProduct: async (id, productData) => {
     if (!id) throw new Error('Product ID is required');
     try {
       const token = localStorage.getItem('adminToken');
+      
       const response = await api.put(`/products/${id}`, productData, {
         headers: {
           Authorization: `Bearer ${token}`
-        }
+        },
+        timeout: 60000
       });
+      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to update product' };
@@ -118,6 +148,7 @@ export const productService = {
       const response = await api.delete(`/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to delete product' };

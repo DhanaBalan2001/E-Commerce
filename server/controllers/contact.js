@@ -19,7 +19,7 @@ export const sendContactMessage = async (req, res) => {
     }).select('email name role');
 
     if (admins.length === 0) {
-      console.log('No active admins found for contact notification');
+
       return res.status(200).json({
         success: true,
         message: 'Message received successfully'
@@ -35,7 +35,7 @@ export const sendContactMessage = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Contact message error:', error);
+
     res.status(500).json({
       success: false,
       message: 'Failed to send message'

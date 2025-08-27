@@ -19,27 +19,34 @@ const storage = multer.diskStorage({
     }
 });
 
+// File filter function to validate file types
+const fileFilter = (req, file, cb) => {
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+    const allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/avif'
+    ];
+    
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    const mimeType = file.mimetype.toLowerCase();
+    
+    if (allowedExtensions.includes(fileExtension) && allowedMimeTypes.includes(mimeType)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file extension. Allowed: jpg, jpeg, png, gif, webp, avif'), false);
+    }
+};
+
 export const upload = multer({ 
     storage: storage,
+    fileFilter: fileFilter,
     limits: {
         fileSize: 10 * 1024 * 1024, // Increased to 10MB
         fieldSize: 10 * 1024 * 1024 // Also increase field size limit
-    },
-    fileFilter: (req, file, cb) => {
-        // Check file type
-        if (!file.mimetype.startsWith('image/')) {
-            return cb(new Error('Only image files are allowed'), false);
-        }
-        
-        // Check file extension
-        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
-        const fileExtension = path.extname(file.originalname).toLowerCase();
-        
-        if (!allowedExtensions.includes(fileExtension)) {
-            return cb(new Error('Invalid file extension. Allowed: jpg, jpeg, png, gif, webp, avif'), false);
-        }
-        
-        cb(null, true);
     }
 });
 
@@ -95,6 +102,14 @@ export const handleMulterError = (error, req, res, next) => {
                 });
         }
     } else if (error) {
+        // Handle file filter errors
+        if (error.message && error.message.includes('Invalid file extension')) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+                error: 'INVALID_FILE_TYPE'
+            });
+        }
         return res.status(400).json({
             success: false,
             message: error.message || 'File upload error.',

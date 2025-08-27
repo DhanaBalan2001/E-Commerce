@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Modal } from '
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { adminAuthService } from '../../../services';
+import Loading from '../../../components/common/Loading';
 import './adminlogin.css';
 
 const AdminLogin = () => {
@@ -48,13 +49,16 @@ const AdminLogin = () => {
 
     try {
       const response = await adminAuthService.login(formData.email, formData.password);
-
       
-      // Force navigation to dashboard
-      window.location.href = '/admin/dashboard';
+      if (response.token) {
+        // Immediate navigation for better UX
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        setError('Login failed - no token received');
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.response?.data?.message || error.message || 'Login failed');
+      setError(error.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -76,14 +80,19 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="admin-login">
-      <div className="login-container">
-        <div className="login-header">
-          <h2 className="login-title">🔐 Admin Login</h2>
-          <p className="login-subtitle">Access admin dashboard</p>
-        </div>
+    <>
+      <Loading 
+        show={loading} 
+        message="Logging you in..."
+      />
+      <div className="admin-login">
+        <div className="login-container">
+          <div className="login-header">
+            <h2 className="login-title">🔐 Admin Login</h2>
+            <p className="login-subtitle">Access admin dashboard</p>
+          </div>
 
-        {error && <div className="alert alert-danger">{error}</div>}
+          {error && <div className="alert alert-danger">{error}</div>}
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
@@ -126,8 +135,9 @@ const AdminLogin = () => {
           <button 
             type="submit" 
             className="login-btn"
+            disabled={loading}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
@@ -182,7 +192,8 @@ const AdminLogin = () => {
           )}
         </Modal.Body>
       </Modal>
-    </div>
+      </div>
+    </>
   );
 };
 

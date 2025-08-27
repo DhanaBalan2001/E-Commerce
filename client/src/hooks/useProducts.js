@@ -7,6 +7,7 @@ export const useProducts = (filters = {}) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Memoize filters to prevent unnecessary re-renders
   const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
@@ -27,7 +28,22 @@ export const useProducts = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [memoizedFilters]);
+  }, [memoizedFilters, refreshTrigger]);
+
+  // Listen for cache invalidation events
+  useEffect(() => {
+    const handleCacheInvalidation = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('forceProductsRefresh', handleCacheInvalidation);
+    window.addEventListener('forceAllRefresh', handleCacheInvalidation);
+
+    return () => {
+      window.removeEventListener('forceProductsRefresh', handleCacheInvalidation);
+      window.removeEventListener('forceAllRefresh', handleCacheInvalidation);
+    };
+  }, []);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

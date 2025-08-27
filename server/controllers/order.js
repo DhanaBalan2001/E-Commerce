@@ -281,8 +281,6 @@ export const createManualPaymentOrder = async (req, res) => {
             pricing: { subtotal, tax, shipping, total },
             status: 'pending'
         });
-        
-
 
         await order.save();
 
@@ -292,9 +290,7 @@ export const createManualPaymentOrder = async (req, res) => {
 
         // Populate order with user data for email
         await order.populate('user', 'name email phone phoneNumber');
-        
 
-        
         // Send admin payment verification notification with screenshot
         const orderDetails = {
             items: orderItems,
@@ -405,7 +401,6 @@ export const verifyManualPayment = async (req, res) => {
                         order.user.name
                     );
                 } catch (bgError) {
-                    console.error('Background task error:', bgError);
                 }
             });
         }
@@ -608,8 +603,6 @@ export const updateOrderStatus = async (req, res) => {
 export const getAdminOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    
-
 
     const order = await Order.findById(id)
       .populate('user', 'name email phone phoneNumber')
@@ -630,8 +623,6 @@ export const getAdminOrderById = async (req, res) => {
         message: 'Order not found'
       });
     }
-
-
 
     res.json({
       success: true,
@@ -738,7 +729,7 @@ export const trackOrder = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Track order error:', error);
+
         res.status(500).json({ 
             success: false,
             message: 'Server error', 

@@ -34,7 +34,6 @@ export const getCart = async (req, res) => {
                         });
                     }
                 } catch (bundleError) {
-                    console.error('Bundle not found:', item.bundleInfo.bundleId);
                 }
             } else if (item.giftBoxInfo && item.giftBoxInfo.giftBoxId) {
                 // Handle gift box items
@@ -54,7 +53,6 @@ export const getCart = async (req, res) => {
                         });
                     }
                 } catch (giftBoxError) {
-                    console.error('Gift box not found:', item.giftBoxInfo.giftBoxId);
                 }
             } else if (item.product) {
                 // Handle regular products
@@ -95,8 +93,6 @@ export const addToCart = async (req, res) => {
     try {
         const { productId, quantity = 1 } = req.body;
         const userId = req.user.id;
-        
-
 
         if (!productId || quantity <= 0) {
             return res.status(400).json({ message: 'Valid product ID and quantity required' });

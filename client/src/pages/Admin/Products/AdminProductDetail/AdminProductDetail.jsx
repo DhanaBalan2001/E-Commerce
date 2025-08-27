@@ -184,8 +184,9 @@ const AdminProductDetail = () => {
                     <Carousel.Item key={index}>
                       <img
                         className="d-block w-100 product-image"
-                        src={image?.url ? getImageUrl(image.url) : '/placeholder-image.jpg'}
+                        src={image?.url ? `${getImageUrl(image.url)}?t=${new Date(product.updatedAt || product.createdAt).getTime()}` : '/placeholder-image.jpg'}
                         alt={`${product.name} ${index + 1}`}
+                        loading="lazy"
                         onError={(e) => {
                           if (e.target.src !== window.location.origin + '/placeholder-image.jpg') {
                             e.target.src = '/placeholder-image.jpg';

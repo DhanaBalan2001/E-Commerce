@@ -41,12 +41,7 @@ import {
   optimizeDatabase,
   checkDatabaseHealth
 } from './middleware/performance.js';
-import {
-  enhancedRateLimit,
-  connectionOptimizer,
-  requestSizeLimiter,
-  healthMonitor
-} from './middleware/basicOptimizations.js';
+
 
 dotenv.config();
 
@@ -93,10 +88,6 @@ function startServer() {
 
   // Performance middleware
   app.use(compressionMiddleware);
-  app.use(connectionOptimizer);
-  app.use(requestSizeLimiter);
-  app.use(healthMonitor);
-  app.use(enhancedRateLimit);
   
   // CORS with optimizations
   app.use(cors({

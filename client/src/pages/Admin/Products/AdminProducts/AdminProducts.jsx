@@ -379,7 +379,7 @@ const AdminProducts = () => {
                   <tr key={product._id}>
                     <td>
                       <img
-                        src={product.images?.[0]?.url ? getImageUrl(product.images[0].url) : '/placeholder-image.jpg'}
+                        src={product.images?.[0]?.url ? `${getImageUrl(product.images[0].url)}?t=${new Date(product.updatedAt || product.createdAt).getTime()}` : '/placeholder-image.jpg'}
                         alt={product.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
                         loading="lazy"
@@ -467,7 +467,7 @@ const AdminProducts = () => {
                 <div key={product._id} className="mobile-product-card">
                   <div className="mobile-card-header">
                     <img
-                      src={product.images?.[0]?.url ? getImageUrl(product.images[0].url) : '/placeholder-image.jpg'}
+                      src={product.images?.[0]?.url ? `${getImageUrl(product.images[0].url)}?t=${new Date(product.updatedAt || product.createdAt).getTime()}` : '/placeholder-image.jpg'}
                       alt={product.name}
                       style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', marginRight: '12px' }}
                       loading="lazy"

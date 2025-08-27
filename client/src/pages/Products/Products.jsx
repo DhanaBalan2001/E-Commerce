@@ -459,9 +459,14 @@ const Products = () => {
                         <Card className="product-card h-100">
                           <div className="product-image-container" style={{height: window.innerWidth <= 768 ? '95px' : '120px', maxHeight: window.innerWidth <= 768 ? '95px' : '120px'}}>
                             <img
-                              src={getImageUrl(product.images?.[0]?.url)}
+                              src={`${getImageUrl(product.images?.[0]?.url)}?t=${Date.now()}`}
                               alt={product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name}
                               className="product-image"
+                              onError={(e) => {
+                                if (e.target.src !== '/placeholder-image.jpg') {
+                                  e.target.src = '/placeholder-image.jpg';
+                                }
+                              }}
                             />
                           </div>
                           

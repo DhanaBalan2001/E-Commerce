@@ -3,7 +3,10 @@ import api from './api';
 export const adminAuthService = {
   login: async (email, password) => {
     try {
-      const response = await api.post('/admin/login', { email, password });
+      const response = await api.post('/admin/login', 
+        { email, password },
+        { timeout: 15000 } // 15 second timeout
+      );
       
       if (response.data.token) {
         localStorage.setItem('adminToken', response.data.token);
@@ -15,7 +18,10 @@ export const adminAuthService = {
       
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Login failed' };
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Login failed. Please try again.';
+      throw { message: errorMessage };
     }
   },
 

@@ -7,6 +7,8 @@ import { productService } from '../../../../services/productService';
 import { categoryService } from '../../../../services/categoryService';
 import { useCreateProduct, useUpdateProduct } from '../../../../hooks/useProducts';
 import { getImageUrl } from '../../../../utils/imageUrl';
+
+
 import './adminproductform.css';
 
 const MobileDropdown = ({ value, onChange, options, placeholder, isInvalid }) => {
@@ -93,6 +95,19 @@ const AdminProductForm = () => {
   const [errors, setErrors] = useState({});
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
+  const [optimizingImages, setOptimizingImages] = useState(false);
+  const [operationLoading, setOperationLoading] = useState(false);
+  const [operationType, setOperationType] = useState('default');
+
+  const handleSuccessResponse = (response, isUpdate) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast.success(isUpdate ? 'Product updated successfully! Redirecting in 3 seconds...' : 'Product created successfully! Redirecting in 3 seconds...');
+    
+    // Navigate to products page after 3 seconds
+    setTimeout(() => {
+      navigate('/admin/products', { replace: true });
+    }, 3000);
+  };
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -158,19 +173,10 @@ const AdminProductForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    let processedValue = value;
-    
-    if (type === 'number') {
-      if (name === 'price' || name === 'discount') {
-        processedValue = value; // Keep as string for input display
-      } else if (name === 'weight' || name === 'stock') {
-        processedValue = Math.max(0, parseInt(value) || 0);
-      }
-    }
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : processedValue
+      [name]: type === 'checkbox' ? checked : value
     }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
 
@@ -183,19 +189,45 @@ const AdminProductForm = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    setImageFiles(prev => [...prev, ...files]);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, { data: e.target.result, isNew: true }]
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (files.length === 0) return;
+    
+    // Simple validation
+    const invalidFiles = files.filter(file => {
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      const basicExtensions = ['.jpg', '.jpeg', '.png'];
+      return !basicExtensions.includes(fileExtension) || file.size > 10 * 1024 * 1024;
     });
+    
+    if (invalidFiles.length > 0) {
+      toast.error('Please upload JPG, JPEG, or PNG images under 10MB.');
+      e.target.value = '';
+      return;
+    }
+    
+    setOptimizingImages(true);
+    
+    try {
+      const imagePromises = files.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({ data: e.target.result, isNew: true });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      
+      const imageData = await Promise.all(imagePromises);
+      setImageFiles(prev => [...prev, ...files]);
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...imageData]
+      }));
+    } finally {
+      setOptimizingImages(false);
+    }
   };
 
   const removeImage = (index) => {
@@ -222,73 +254,120 @@ const AdminProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!validateForm()) {
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast.error('Please fix the form errors');
       return;
     }
 
     try {
-      const submitData = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key !== 'images') {
-          let value = formData[key];
-          if (key === 'stock' || key === 'weight') {
-            value = parseInt(value, 10) || 0;
-          }
-          if (key === 'price' || key === 'discount') {
-            value = parseFloat(value) || 0;
-          }
-          if (key === 'subCategories' && Array.isArray(value)) {
-            value = JSON.stringify(value);
-          }
-          submitData.append(key, value);
-        }
-      });
+      setOperationLoading(true);
+      setOperationType(isEdit ? 'save' : 'upload');
       
-      const existingImages = formData.images.filter(img => !img.isNew);
-      if (existingImages.length > 0) {
-        submitData.append('existingImages', JSON.stringify(existingImages));
-      }
+      // Check if we have new images to upload
+      const hasNewImages = imageFiles.length > 0;
       
-      imageFiles.forEach(file => submitData.append('images', file));
-      
-      if (isEdit) {
-        const response = await productService.updateProduct(id, submitData);
-        // Show success message immediately
-        toast.success('Product updated successfully!');
-        // Then scroll to top
-        setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 100);
-        
-        const updatedProduct = response.product;
-        setFormData({
-          name: updatedProduct.name || '',
-          description: updatedProduct.description || '',
-          price: updatedProduct.price || '',
-          category: updatedProduct.category?._id || updatedProduct.category || '',
-          subCategories: Array.isArray(updatedProduct.subCategories) ? updatedProduct.subCategories : [],
-          stock: updatedProduct.stock || '',
-          unit: updatedProduct.unit || '',
-          weight: updatedProduct.weight || '',
-          discount: updatedProduct.discount || '',
-          featured: updatedProduct.isFeatured || false,
-          images: updatedProduct.images || []
+      if (hasNewImages) {
+        // Use FormData for file uploads
+        const submitData = new FormData();
+        Object.keys(formData).forEach(key => {
+          if (key !== 'images') {
+            let value = formData[key];
+            if (key === 'stock' || key === 'weight') {
+              value = parseInt(value, 10) || 0;
+            }
+            if (key === 'price' || key === 'discount') {
+              value = parseFloat(value) || 0;
+            }
+            if (key === 'subCategories' && Array.isArray(value)) {
+              value = JSON.stringify(value);
+            }
+            submitData.append(key, value);
+          }
         });
-        setImageFiles([]);
-      } else {
-        await productService.createProduct(submitData);
-        // Show success message immediately
-        toast.success('Product created successfully!');
-        // Then scroll to top
-        setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 100);
         
-        setTimeout(() => {
-          navigate('/admin/products', { replace: true });
-        }, 1200);
+        const existingImages = formData.images.filter(img => !img.isNew);
+        if (existingImages.length > 0) {
+          submitData.append('existingImages', JSON.stringify(existingImages));
+        }
+        
+        imageFiles.forEach(file => submitData.append('images', file));
+        
+        if (isEdit) {
+          const response = await productService.updateProduct(id, submitData);
+          handleSuccessResponse(response, true);
+        } else {
+          const response = await productService.createProduct(submitData);
+          handleSuccessResponse(response, false);
+        }
+      } else {
+        // Use JSON for text-only updates
+        const jsonData = {
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price) || 0,
+          category: formData.category,
+          subCategories: formData.subCategories,
+          stock: parseInt(formData.stock, 10) || 0,
+          unit: formData.unit,
+          weight: parseInt(formData.weight, 10) || 0,
+          discount: parseFloat(formData.discount) || 0,
+          isFeatured: formData.featured
+        };
+        
+        // Keep existing images
+        const existingImages = formData.images.filter(img => !img.isNew);
+        if (existingImages.length > 0) {
+          jsonData.images = existingImages;
+        }
+        
+        if (isEdit) {
+          const response = await productService.updateProduct(id, jsonData);
+          handleSuccessResponse(response, true);
+        } else {
+          const response = await productService.createProduct(jsonData);
+          handleSuccessResponse(response, false);
+        }
       }
+
       
     } catch (error) {
-      toast.error(error.message || 'Failed to save product');
-      setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 100);
+      // Scroll to top to show error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+
+      
+      // Clear file input if there was a file validation error
+      if (error.message && error.message.includes('Invalid file extension')) {
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = '';
+      }
+      
+      // Handle different types of errors
+      let errorMessage = 'Failed to save product';
+      
+      if (error.isNetworkError) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.isTimeout) {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error.message) {
+        // Handle the specific file extension error from the deployed server
+        if (error.message.includes('Invalid file extension')) {
+          errorMessage = 'Server validation error. Please try uploading different image files or contact support.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setOperationLoading(false);
     }
   };
 
@@ -302,7 +381,17 @@ const AdminProductForm = () => {
   }
 
   return (
-    <Container fluid className="admin-product-form">
+    <>
+      {(optimizingImages || operationLoading) && (
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+             style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
+          <div className="bg-white p-3 rounded text-center">
+            <Spinner animation="border" variant="primary" size="sm" className="mb-2" />
+            <div><small>{optimizingImages ? 'Processing images...' : (isEdit ? 'Updating...' : 'Creating...')}</small></div>
+          </div>
+        </div>
+      )}
+      <Container fluid className="admin-product-form">
       <Form onSubmit={handleSubmit}>
         <Row>
           <Col>
@@ -483,9 +572,13 @@ const AdminProductForm = () => {
                   <Form.Control
                     type="file"
                     multiple
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/jpg,image/png"
                     onChange={handleImageUpload}
                     isInvalid={!!errors.images}
                   />
+                  <Form.Text className="text-muted">
+                    Allowed formats: JPG, JPEG, PNG, GIF, WEBP, AVIF (Max 10MB each)
+                  </Form.Text>
                   <Form.Control.Feedback type="invalid">{errors.images}</Form.Control.Feedback>
                 </Form.Group>
 
@@ -493,14 +586,16 @@ const AdminProductForm = () => {
                   {formData.images.map((img, index) => (
                     <div key={index} className="image-preview-item position-relative">
                       <Image
-                        src={img.isNew ? img.data : getImageUrl(img.url, true)}
+                        src={img.isNew ? img.data : `${getImageUrl(img.url)}?t=${Date.now()}`}
                         alt={`Product Image ${index + 1}`}
                         thumbnail
+                        loading="lazy"
                         onError={(e) => {
                           if (e.target.src !== window.location.origin + '/placeholder-image.jpg') {
                             e.target.src = '/placeholder-image.jpg';
                           }
                         }}
+
                       />
                       {!img.isNew && (
                         <span className="existing-image-badge position-absolute top-0 start-0 bg-primary text-white px-1 py-0 rounded">
@@ -526,9 +621,9 @@ const AdminProductForm = () => {
                   variant="primary"
                   size="lg"
                   className="w-100"
-                  disabled={createProduct.loading || updateProduct.loading}
+                  disabled={operationLoading}
                 >
-                  {createProduct.loading || updateProduct.loading ? (
+                  {operationLoading ? (
                     <>
                       <Spinner size="sm" className="me-2" />
                       {isEdit ? 'Updating...' : 'Creating...'}
@@ -545,6 +640,7 @@ const AdminProductForm = () => {
         </Row>
       </Form>
     </Container>
+    </>
   );
 };
 

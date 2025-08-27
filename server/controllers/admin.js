@@ -479,7 +479,6 @@ export const getOrders = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get orders error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch orders',
@@ -509,7 +508,6 @@ export const getOrderById = async (req, res) => {
       order
     });
   } catch (error) {
-    console.error('Get order by ID error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch order',
@@ -554,7 +552,6 @@ export const updateOrderStatus = async (req, res) => {
       order
     });
   } catch (error) {
-    console.error('Update order status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update order status',
@@ -613,7 +610,6 @@ export const getUserStats = async (req, res) => {
       withOrders: usersWithOrders[0]?.count || 0
     });
   } catch (error) {
-    console.error('Get user stats error:', error);
     res.status(500).json({
       message: 'Failed to fetch user stats',
       error: error.message
@@ -645,7 +641,7 @@ export const updateUserStatus = async (req, res) => {
       user
     });
   } catch (error) {
-    console.error('Update user status error:', error);
+
     res.status(500).json({
       success: false,
       message: 'Failed to update user status',
@@ -700,7 +696,7 @@ export const exportOrdersCSV = async (req, res) => {
     res.send('Order Number,Customer Name,Status,Total\nORD001,John Doe,delivered,1000\nORD002,Jane Smith,pending,500');
     
   } catch (error) {
-    console.error('Export error:', error);
+
     res.status(500).json({
       success: false,
       message: 'Failed to export orders',

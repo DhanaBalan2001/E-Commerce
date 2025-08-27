@@ -1,19 +1,23 @@
 import axios from 'axios';
 
+
 // Get API URL from environment variables with fallback
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 0,
+  timeout: 60000,
   headers: {
     'Accept': 'application/json',
   }
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and performance monitoring
 api.interceptors.request.use(
   (config) => {
+    // Start performance monitoring
+    config.metadata = { startTime: performance.now() };
+    
     // Get tokens from localStorage
     const token = localStorage.getItem('token');
     const adminToken = localStorage.getItem('adminToken');
@@ -41,9 +45,11 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle common errors
+// Response interceptor to handle common errors and performance monitoring
 api.interceptors.response.use(
   (response) => {
+
+    
     // Handle token refresh
     const newToken = response.headers['x-new-token'];
     if (newToken) {
@@ -57,6 +63,8 @@ api.interceptors.response.use(
   async (error) => {
     const { config, response } = error;
     
+
+    
     // Handle rate limit without automatic logout
     if (response?.status === 429) {
       return Promise.reject({
@@ -66,16 +74,23 @@ api.interceptors.response.use(
       });
     }
     
-    // Retry logic for network errors (not timeout errors)
-    if (!response && config && !config.__retryCount && !error.code?.includes('TIMEOUT')) {
+    // Enhanced retry logic for network errors and timeouts
+    if (!response && config && !config.__retryCount) {
       config.__retryCount = 0;
     }
     
-    if (!response && config && config.__retryCount < 2 && !error.code?.includes('TIMEOUT')) {
+    // Retry for network errors (including timeouts) but with different strategies
+    if (!response && config && config.__retryCount < 2) {
       config.__retryCount += 1;
-
+      
+      // Increase timeout for retries
+      config.timeout = Math.min(config.timeout * 1.5, 180000); // Max 3 minutes
+      
+      const retryDelay = config.__retryCount * 3000; // Progressive delay
+      console.log(`🔄 Retrying request (${config.__retryCount}/2) after ${retryDelay}ms: ${config.url}`);
+      
       return new Promise(resolve => {
-        setTimeout(() => resolve(api(config)), 1000 * config.__retryCount);
+        setTimeout(() => resolve(api(config)), retryDelay);
       });
     }
     
@@ -110,17 +125,28 @@ api.interceptors.response.use(
 
     }
     
-    // Return a more user-friendly error
-    const errorMessage = response?.data?.message || 
-                        response?.data?.error || 
-                        error.message || 
-                        'An unexpected error occurred';
+    // Return a more user-friendly error with network context
+    let errorMessage = response?.data?.message || 
+                      response?.data?.error || 
+                      error.message || 
+                      'An unexpected error occurred';
+    
+    // Add context for network issues
+    if (!response) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'Request timed out. Please check your internet connection and try again.';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+    }
     
     return Promise.reject({
       ...error,
       message: errorMessage,
       status: response?.status,
-      data: response?.data
+      data: response?.data,
+      isNetworkError: !response,
+      isTimeout: error.code === 'ECONNABORTED' || error.message?.includes('timeout')
     });
   }
 );

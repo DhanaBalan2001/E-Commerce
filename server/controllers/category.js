@@ -52,7 +52,7 @@ export const getAllCategories = async (req, res) => {
             total: categoriesWithCount.length
         });
     } catch (error) {
-        console.error('Get all categories error:', error);
+
         res.status(500).json({ 
             success: false,
             message: 'Server error',
@@ -81,9 +81,7 @@ export const getCategoryById = async (req, res) => {
 export const createCategory = async (req, res) => {
     try {
         const { name, description, subCategories, icon, sortOrder, seoTitle, seoDescription, seoKeywords } = req.body;
-        
-        console.log('📁 Creating category:', { name, hasFile: !!req.file });
-        
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({
                 success: false,
@@ -95,11 +93,7 @@ export const createCategory = async (req, res) => {
         
         let imageData = null;
         if (req.file) {
-            console.log('🖼️ File uploaded:', {
-                filename: req.file.filename,
-                size: req.file.size,
-                mimetype: req.file.mimetype
-            });
+
             imageData = await uploadFileToCloudinary(req.file.path, 'categories');
         }
 
@@ -115,7 +109,7 @@ export const createCategory = async (req, res) => {
                     slug: sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
                 }));
             } catch (error) {
-                console.error('Error parsing subCategories:', error);
+
                 parsedSubCategories = [];
             }
         }
@@ -150,16 +144,13 @@ export const createCategory = async (req, res) => {
 
         const responseCategory = category.toObject();
 
-        console.log('✅ Category created successfully:', responseCategory.name);
-        
         res.status(201).json({
             success: true,
             message: 'Category created successfully',
             category: responseCategory
         });
     } catch (error) {
-        console.error('❌ Create category error:', error);
-        
+
         // Clean up uploaded file if category creation fails
         if (req.file) {
             deleteUploadedFile(req.file.path);
@@ -194,15 +185,9 @@ export const updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        
-        console.log('🔄 Updating category:', id);
-        console.log('📁 Has file:', !!req.file);
+
         if (req.file) {
-            console.log('🖼️ File details:', {
-                filename: req.file.filename,
-                size: req.file.size,
-                mimetype: req.file.mimetype
-            });
+
         }
 
         if (updateData.name) {
@@ -211,7 +196,7 @@ export const updateCategory = async (req, res) => {
 
         if (req.file) {
             updateData.image = await uploadFileToCloudinary(req.file.path, 'categories');
-            console.log('🖼️ New image URL:', updateData.image);
+
         }
 
         if (updateData.subCategories) {
@@ -225,7 +210,7 @@ export const updateCategory = async (req, res) => {
                     slug: sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
                 }));
             } catch (error) {
-                console.error('Error parsing subCategories:', error);
+
             }
         }
 
@@ -261,7 +246,7 @@ export const updateCategory = async (req, res) => {
             category: responseCategory
         });
     } catch (error) {
-        console.error('Update category error:', error);
+
         res.status(500).json({ 
             success: false,
             message: 'Server error', 
@@ -293,7 +278,7 @@ export const deleteCategory = async (req, res) => {
             message: 'Category deleted successfully' 
         });
     } catch (error) {
-        console.error('Delete category error:', error);
+
         res.status(500).json({ 
             success: false,
             message: 'Server error', 

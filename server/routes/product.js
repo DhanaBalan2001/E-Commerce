@@ -14,7 +14,7 @@ import {
     getRecentReviews
 } from '../controllers/product.js';
 import { authenticateUser, authenticateAdmin, checkPermission } from '../middleware/auth.js';
-import { upload } from '../middleware/upload.js';
+import { upload, handleMulterError } from '../middleware/upload.js';
 import { validateProduct , validateReview} from '../middleware/validation.js';
 
 const router = express.Router();
@@ -36,7 +36,7 @@ router.post('/',
     authenticateAdmin, 
     checkPermission('manage_products'),
     upload.array('images', 5),
-    validateProduct,
+    handleMulterError,
     createProduct
 );
 
@@ -44,7 +44,22 @@ router.put('/:id',
     authenticateAdmin, 
     checkPermission('manage_products'),
     upload.array('images', 5),
+    handleMulterError,
     updateProduct
+);
+
+// Text-only update route (no file upload)
+router.put('/:id/text-only', 
+    authenticateAdmin, 
+    checkPermission('manage_products'),
+    updateProduct
+);
+
+// Text-only create route (no file upload)
+router.post('/text-only', 
+    authenticateAdmin, 
+    checkPermission('manage_products'),
+    createProduct
 );
 
 router.delete('/:id', 

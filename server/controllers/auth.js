@@ -7,9 +7,6 @@ import { sendOTPEmail, sendWelcomeEmail, sendAdminPasswordResetOTP } from '../ut
 export const sendOTPController = async (req, res) => {
     try {
         const { email } = req.body;
-
-        console.log('📧 OTP request for:', email);
-
         if (!email) {
             return res.status(400).json({ 
                 message: 'Email is required'
@@ -26,15 +23,9 @@ export const sendOTPController = async (req, res) => {
 
         const otp = generateOTP();
         const otpExpiry = generateOTPExpiry();
-
-        console.log('Generated OTP:', otp, 'Expires at:', otpExpiry);
-
         // Find or create user
         let user = await User.findOne({ email: email.toLowerCase() });
-        console.log('Found user:', user ? 'Yes' : 'No');
-        
         if (!user) {
-            console.log('Creating new user...');
             user = new User({ 
                 email: email.toLowerCase(),
                 name: `User_${Date.now()}` // Temporary name
@@ -58,16 +49,9 @@ export const sendOTPController = async (req, res) => {
             attempts: 0,
             lastSentAt: new Date()
         };
-        
-        console.log('Saving user with OTP...');
         await user.save();
-        console.log('User saved successfully');
-
         // Send OTP via Email
-        console.log('Sending OTP email...');
         const emailResult = await sendOTPEmail(email, otp, user.name);
-        console.log('Email result:', emailResult);
-        
         res.status(200).json({
             message: 'OTP sent successfully',
             expiresIn: 600,
@@ -78,8 +62,6 @@ export const sendOTPController = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Send OTP error:', error);
-        console.error('Error stack:', error.stack);
         res.status(500).json({ 
             message: 'Server error', 
             error: error.message,
@@ -91,44 +73,31 @@ export const sendOTPController = async (req, res) => {
 export const verifyOTPController = async (req, res) => {
     try {
         const { email, otp, name } = req.body;
-
-        console.log('🔐 OTP verification request:', { email, otp: otp ? '***' + otp.slice(-2) : 'none', name });
-
         if (!email || !otp) {
             return res.status(400).json({ message: 'Email and OTP are required' });
         }
 
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            console.log('❌ User not found for email:', email);
             return res.status(404).json({ message: 'User not found. Please request OTP first.' });
         }
-
-        console.log('👤 User found:', { id: user._id, email: user.email, hasOTP: !!user.otp });
-
         if (!user.otp || !user.otp.code) {
-            console.log('❌ No OTP found for user');
             return res.status(400).json({ message: 'No OTP found. Please request a new OTP.' });
         }
 
         if (user.otp.attempts >= 5) {
-            console.log('❌ Too many OTP attempts:', user.otp.attempts);
             return res.status(429).json({ 
                 message: 'Too many failed attempts. Please request a new OTP.'
             });
         }
 
         if (user.otp.expiresAt < new Date()) {
-            console.log('❌ OTP expired:', { expiresAt: user.otp.expiresAt, now: new Date() });
             return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
         }
 
         if (user.otp.code !== otp) {
             user.otp.attempts += 1;
             await user.save();
-            
-            console.log('❌ Invalid OTP attempt:', { attempts: user.otp.attempts, attemptsLeft: 5 - user.otp.attempts });
-            
             return res.status(400).json({ 
                 message: 'Invalid OTP',
                 attemptsLeft: 5 - user.otp.attempts
@@ -136,7 +105,6 @@ export const verifyOTPController = async (req, res) => {
         }
 
         // OTP verified successfully
-        console.log('✅ OTP verified successfully');
         const isNewUser = !user.isVerified;
         
         user.isVerified = true;
@@ -144,16 +112,12 @@ export const verifyOTPController = async (req, res) => {
         
         if (name && name.trim()) {
             user.name = name.trim();
-            console.log('📝 Updated user name:', user.name);
         }
         
         user.otp = undefined;
         await user.save();
-        console.log('💾 User saved successfully');
-
         // Send welcome email for new users
         if (isNewUser) {
-            console.log('📧 Sending welcome email to new user');
             await sendWelcomeEmail(user.email, user.name);
         }
 
@@ -162,9 +126,6 @@ export const verifyOTPController = async (req, res) => {
             email: user.email,
             type: 'user'
         });
-
-        console.log('🎫 Token generated successfully');
-
         const responseData = {
             message: 'OTP verified successfully',
             token,
@@ -177,13 +138,9 @@ export const verifyOTPController = async (req, res) => {
             },
             isNewUser
         };
-
-        console.log('✅ Sending success response');
         res.status(200).json(responseData);
 
     } catch (error) {
-        console.error('❌ Verify OTP error:', error);
-        console.error('Error stack:', error.stack);
         res.status(500).json({ 
             message: 'Server error', 
             error: error.message,
@@ -296,8 +253,6 @@ export const createFirstAdmin = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Create first admin error:', error);
-        
         if (error.code === 11000) {
             return res.status(400).json({ 
                 message: 'Email already exists' 
@@ -321,7 +276,10 @@ export const adminLogin = async (req, res) => {
             });
         }
 
-        const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
+        // Find admin with optimized query
+        const admin = await Admin.findOne({ 
+            email: email.toLowerCase().trim() 
+        }).select('+password').lean();
         
         if (!admin) {
             return res.status(401).json({ 
@@ -335,7 +293,9 @@ export const adminLogin = async (req, res) => {
             });
         }
 
-        const isPasswordValid = await admin.comparePassword(password);
+        // Use the Admin model to compare password
+        const adminDoc = await Admin.findById(admin._id);
+        const isPasswordValid = await adminDoc.comparePassword(password);
         
         if (!isPasswordValid) {
             return res.status(401).json({ 
@@ -343,8 +303,8 @@ export const adminLogin = async (req, res) => {
             });
         }
 
-        admin.lastLogin = new Date();
-        await admin.save();
+        // Update last login asynchronously
+        Admin.findByIdAndUpdate(admin._id, { lastLogin: new Date() }).exec();
 
         const token = generateToken({ 
             id: admin._id, 
@@ -362,14 +322,13 @@ export const adminLogin = async (req, res) => {
                 name: admin.name,
                 role: admin.role,
                 permissions: admin.permissions,
-                lastLogin: admin.lastLogin
+                lastLogin: new Date()
             }
         });
 
     } catch (error) {
-        console.error('Admin login error:', error);
         res.status(500).json({ 
-            message: 'Server error'
+            message: 'Login failed. Please try again.'
         });
     }
 };

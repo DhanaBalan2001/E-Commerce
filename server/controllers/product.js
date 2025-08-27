@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import { deleteUploadedFile, getImageUrl, uploadFileToCloudinary } from '../middleware/upload.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 import mongoose from 'mongoose';
 import fs from 'fs';
 
@@ -105,7 +106,6 @@ export const getAllProducts = async (req, res) => {
             hasPrevPage: parseInt(page) > 1
         });
     } catch (error) {
-        console.error('Get all products error:', error);
         res.status(500).json({
             success: false,
             message: 'Server error',
@@ -137,12 +137,49 @@ export const createProduct = async (req, res) => {
   try {
     const productData = req.body;
 
-    // Convert numeric fields
-    if (productData.price) productData.price = parseFloat(productData.price);
-    if (productData.weight) productData.weight = parseInt(productData.weight, 10);
-    if (productData.stock) productData.stock = parseInt(productData.stock, 10);
-    if (productData.discount) productData.discount = parseFloat(productData.discount);
-    if (productData.featured !== undefined) productData.isFeatured = productData.featured === 'true' || productData.featured === true;
+    // Validate required fields
+    if (!productData.name || !productData.description || !productData.category) {
+      return res.status(400).json({ 
+        message: 'Name, description, and category are required' 
+      });
+    }
+
+    // Convert numeric fields with validation
+    if (productData.price) {
+      const price = parseFloat(productData.price);
+      if (isNaN(price) || price <= 0) {
+        return res.status(400).json({ message: 'Invalid price value' });
+      }
+      productData.price = price;
+    }
+    
+    if (productData.weight) {
+      const weight = parseInt(productData.weight, 10);
+      if (isNaN(weight) || weight <= 0) {
+        return res.status(400).json({ message: 'Invalid weight value' });
+      }
+      productData.weight = weight;
+    }
+    
+    if (productData.stock) {
+      const stock = parseInt(productData.stock, 10);
+      if (isNaN(stock) || stock < 0) {
+        return res.status(400).json({ message: 'Invalid stock value' });
+      }
+      productData.stock = stock;
+    }
+    
+    if (productData.discount) {
+      const discount = parseFloat(productData.discount);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        return res.status(400).json({ message: 'Invalid discount value' });
+      }
+      productData.discount = discount;
+    }
+    
+    if (productData.featured !== undefined) {
+      productData.isFeatured = productData.featured === 'true' || productData.featured === true;
+    }
     
     // Handle subCategories array
     if (productData.subCategories) {
@@ -150,18 +187,51 @@ export const createProduct = async (req, res) => {
         productData.subCategories = typeof productData.subCategories === 'string' 
           ? JSON.parse(productData.subCategories) 
           : productData.subCategories;
+        
+        // Validate subCategories are valid ObjectIds
+        if (Array.isArray(productData.subCategories)) {
+          productData.subCategories = productData.subCategories.filter(id => 
+            mongoose.Types.ObjectId.isValid(id)
+          );
+        }
       } catch (e) {
         productData.subCategories = [];
       }
     }
 
-    // Handle images from req.files
+    // Handle images - Upload to Cloudinary in production
     if (req.files && req.files.length > 0) {
-      productData.images = req.files.map(file => ({
-        url: getImageUrl(file.filename),
-        filename: file.filename,
-        uploadDate: new Date()
-      }));
+      try {
+        const imagePromises = req.files.map(async (file) => {
+          try {
+            // Upload to Cloudinary
+            const cloudinaryUrl = await uploadToCloudinary(file.path, 'products');
+            // Clean up local file
+            if (fs.existsSync(file.path)) {
+              fs.unlinkSync(file.path);
+            }
+            return {
+              url: cloudinaryUrl,
+              filename: file.filename,
+              uploadDate: new Date()
+            };
+          } catch (error) {
+            // Fallback to local storage
+            return {
+              url: getImageUrl(file.filename),
+              filename: file.filename,
+              uploadDate: new Date()
+            };
+          }
+        });
+        
+        productData.images = await Promise.all(imagePromises);
+      } catch (error) {
+        return res.status(500).json({ 
+          message: 'Failed to process images', 
+          error: error.message 
+        });
+      }
     }
 
     const product = new Product(productData);
@@ -172,8 +242,26 @@ export const createProduct = async (req, res) => {
       product
     });
   } catch (error) {
-    console.error('Create product error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    // Handle specific MongoDB errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: validationErrors 
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        message: 'Invalid data format', 
+        error: error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to create product', 
+      error: error.message 
+    });
   }
 };
 
@@ -181,19 +269,56 @@ export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: 'Product ID is required' });
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid product ID format' });
+    }
 
-    console.log('Update product ID:', id);
-    console.log('Update product request body:', req.body);
-    console.log('Files received:', req.files?.length || 0);
+    // Check if product exists first
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
 
     const updateData = { ...req.body };
 
-    // Convert fields to correct types
-    if (updateData.price) updateData.price = parseFloat(updateData.price);
-    if (updateData.weight) updateData.weight = parseInt(updateData.weight, 10);
-    if (updateData.stock) updateData.stock = parseInt(updateData.stock, 10);
-    if (updateData.discount) updateData.discount = parseFloat(updateData.discount);
-    if (updateData.featured !== undefined) updateData.isFeatured = updateData.featured === 'true' || updateData.featured === true;
+    // Convert fields to correct types with validation
+    if (updateData.price !== undefined) {
+      const price = parseFloat(updateData.price);
+      if (isNaN(price) || price < 0) {
+        return res.status(400).json({ message: 'Invalid price value' });
+      }
+      updateData.price = price;
+    }
+    
+    if (updateData.weight !== undefined) {
+      const weight = parseInt(updateData.weight, 10);
+      if (isNaN(weight) || weight <= 0) {
+        return res.status(400).json({ message: 'Invalid weight value' });
+      }
+      updateData.weight = weight;
+    }
+    
+    if (updateData.stock !== undefined) {
+      const stock = parseInt(updateData.stock, 10);
+      if (isNaN(stock) || stock < 0) {
+        return res.status(400).json({ message: 'Invalid stock value' });
+      }
+      updateData.stock = stock;
+    }
+    
+    if (updateData.discount !== undefined) {
+      const discount = parseFloat(updateData.discount);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        return res.status(400).json({ message: 'Invalid discount value' });
+      }
+      updateData.discount = discount;
+    }
+    
+    if (updateData.featured !== undefined) {
+      updateData.isFeatured = updateData.featured === 'true' || updateData.featured === true;
+    }
     
     // Handle subCategories array
     if (updateData.subCategories) {
@@ -201,13 +326,20 @@ export const updateProduct = async (req, res) => {
         updateData.subCategories = typeof updateData.subCategories === 'string' 
           ? JSON.parse(updateData.subCategories) 
           : updateData.subCategories;
+        
+        // Validate subCategories are valid ObjectIds
+        if (Array.isArray(updateData.subCategories)) {
+          updateData.subCategories = updateData.subCategories.filter(id => 
+            mongoose.Types.ObjectId.isValid(id)
+          );
+        }
       } catch (e) {
         updateData.subCategories = [];
       }
     }
 
     // Handle image updates
-    let finalImages = [];
+    let finalImages = [...existingProduct.images]; // Start with existing images
     
     // Process existing images that should be kept
     if (updateData.existingImages) {
@@ -215,51 +347,92 @@ export const updateProduct = async (req, res) => {
         const existingImages = typeof updateData.existingImages === 'string' 
           ? JSON.parse(updateData.existingImages) 
           : updateData.existingImages;
-        finalImages = [...existingImages];
-        console.log('Keeping existing images:', existingImages.length);
+        finalImages = Array.isArray(existingImages) ? existingImages : [];
       } catch (e) {
-        console.error('Error parsing existing images:', e);
+        finalImages = [...existingProduct.images];
       }
     }
     
     // Add new uploaded images
     if (req.files && req.files.length > 0) {
-      const newImages = req.files.map(file => ({
-        url: getImageUrl(file.filename),
-        filename: file.filename,
-        uploadDate: new Date()
-      }));
-      finalImages = [...finalImages, ...newImages];
-      console.log('Added new images:', newImages.length);
+      try {
+        const imagePromises = req.files.map(async (file) => {
+          try {
+            // Upload to Cloudinary
+            const cloudinaryUrl = await uploadToCloudinary(file.path, 'products');
+            // Clean up local file
+            if (fs.existsSync(file.path)) {
+              fs.unlinkSync(file.path);
+            }
+            return {
+              url: cloudinaryUrl,
+              filename: file.filename,
+              uploadDate: new Date()
+            };
+          } catch (error) {
+            // Fallback to local storage
+            return {
+              url: getImageUrl(file.filename),
+              filename: file.filename,
+              uploadDate: new Date()
+            };
+          }
+        });
+        
+        const newImages = await Promise.all(imagePromises);
+        finalImages = [...finalImages, ...newImages];
+      } catch (error) {
+      }
     }
     
     // Update images in the data
-    if (finalImages.length > 0) {
-      updateData.images = finalImages;
-    }
+    updateData.images = finalImages;
     
     // Remove the existingImages field as it's not part of the schema
     delete updateData.existingImages;
-
-    console.log('Final images count:', finalImages.length);
+    delete updateData.featured; // Remove featured, we use isFeatured
+    
+    // Add updatedAt timestamp for cache busting
+    updateData.updatedAt = new Date();
     
     const product = await Product.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true
     }).populate('category', 'name slug');
-
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    
-    console.log('Product updated successfully:', product.name);
-    console.log('Updated product images:', product.images?.length || 0);
     
     res.status(200).json({ 
       message: 'Product updated successfully', 
       product 
     });
   } catch (error) {
-    console.error('Update product error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    // Handle specific MongoDB errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: validationErrors 
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        message: 'Invalid data format', 
+        error: error.message 
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: 'Duplicate entry', 
+        error: 'Product with this data already exists' 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to update product', 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -274,7 +447,6 @@ export const deleteProduct = async (req, res) => {
         res.status(200).json({ message: 'Product deleted successfully' });
 
     } catch (error) {
-        console.error('Delete product error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -297,7 +469,6 @@ export const deleteProductImage = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Delete image error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -321,7 +492,6 @@ export const getFeaturedProducts = async (req, res) => {
             total: products.length
         });
     } catch (error) {
-        console.error('Get featured products error:', error);
         res.status(500).json({ 
             success: false,
             message: 'Server error',
@@ -334,8 +504,6 @@ export const getFeaturedProducts = async (req, res) => {
 export const getProductsByCategory = async (req, res) => {
     try {
         const { category } = req.params;
-        console.log(`📋 Getting products for category: ${category}`);
-
         const products = await Product.find({ 
             category, 
             isActive: true 
@@ -344,9 +512,6 @@ export const getProductsByCategory = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(20)
         .lean();
-
-        console.log(`✅ Found ${products.length} products in category`);
-
         res.json({
             success: true,
             products: products,
@@ -355,7 +520,6 @@ export const getProductsByCategory = async (req, res) => {
             currentPage: 1
         });
     } catch (error) {
-        console.error('❌ Category products error:', error.message);
         res.status(500).json({ 
             success: false,
             message: 'Failed to fetch category products',
@@ -376,9 +540,6 @@ export const searchProducts = async (req, res) => {
                 products: []
             });
         }
-
-        console.log(`🔍 Searching for: ${q}`);
-
         const products = await Product.find({
             isActive: true,
             $or: [
@@ -390,9 +551,6 @@ export const searchProducts = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(20)
         .lean();
-
-        console.log(`✅ Found ${products.length} search results`);
-
         res.json({
             success: true,
             products: products,
@@ -402,7 +560,6 @@ export const searchProducts = async (req, res) => {
             searchQuery: q
         });
     } catch (error) {
-        console.error('❌ Search error:', error.message);
         res.status(500).json({ 
             success: false,
             message: 'Search failed',
@@ -480,7 +637,6 @@ export const addProductReview = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Add product review error:', error);
         res.status(500).json({ 
             success: false,
             message: 'Server error', 
@@ -505,7 +661,6 @@ export const getProductReviews = async (req, res) => {
 
         res.status(200).json({ reviews: product.reviews });
     } catch (error) {
-        console.error('Error fetching product reviews:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
@@ -561,7 +716,6 @@ export const getRecentReviews = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get recent reviews error:', error);
         res.status(500).json({
             success: false,
             message: 'Server error',
